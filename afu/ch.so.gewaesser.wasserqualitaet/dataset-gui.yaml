@@ -1,0 +1,6 @@
+gui:
+  fields:
+    - id: COMMENT
+      required: true
+      label: Begruendung
+      description: Begruendung fuer die lokale Publikationsdemo.

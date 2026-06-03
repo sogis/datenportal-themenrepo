@@ -1,0 +1,6 @@
+{
+  "id": "ch.so.gewaesser.wasserqualitaet",
+  "title": "Wasserqualitaet",
+  "description": "Messwerte und Auswertungen zur Wasserqualitaet.",
+  "series": true
+}

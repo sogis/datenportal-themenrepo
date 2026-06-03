@@ -1,0 +1,71 @@
+pipeline {
+    agent any
+
+    options {
+        timeout(time: 30, unit: 'MINUTES')
+        disableConcurrentBuilds()
+    }
+
+    stages {
+        stage('Validate parameters') {
+            steps {
+                script {
+                    if (!(params.ORGANISATION ?: '').trim()) {
+                        error('ORGANISATION muss gesetzt sein.')
+                    }
+                    if (!(params.DATASET ?: '').trim()) {
+                        error('DATASET muss gesetzt sein.')
+                    }
+                    if (params.ENVIRONMENT == 'production' && params.CONFIRM_PRODUCTION != true) {
+                        error('CONFIRM_PRODUCTION muss fuer production gesetzt sein.')
+                    }
+                    currentBuild.displayName = "#${env.BUILD_NUMBER} ${params.ORGANISATION} / ${params.DATASET}"
+                    currentBuild.description = "Lokale Datenportal-Demo: ${params.ORGANISATION} / ${params.DATASET}"
+                }
+            }
+        }
+
+        stage('Inspect uploads') {
+            steps {
+                script {
+                    def metadataPresent = false
+                    def dataPresent = false
+
+                    try {
+                        withFileParameter('METADATA_FILE') {
+                            if (env.METADATA_FILE) {
+                                metadataPresent = true
+                                echo "METADATA_FILE=${env.METADATA_FILE}"
+                                echo "METADATA_FILE_FILENAME=${env.METADATA_FILE_FILENAME}"
+                            }
+                        }
+                    } catch (ignored) {
+                        echo 'No METADATA_FILE uploaded.'
+                    }
+
+                    try {
+                        withFileParameter('DATA_FILE') {
+                            if (env.DATA_FILE) {
+                                dataPresent = true
+                                echo "DATA_FILE=${env.DATA_FILE}"
+                                echo "DATA_FILE_FILENAME=${env.DATA_FILE_FILENAME}"
+                            }
+                        }
+                    } catch (ignored) {
+                        echo 'No DATA_FILE uploaded.'
+                    }
+
+                    if (!metadataPresent && !dataPresent) {
+                        error('Mindestens METADATA_FILE oder DATA_FILE muss hochgeladen werden.')
+                    }
+
+                    echo "ORGANISATION=${params.ORGANISATION}"
+                    echo "DATASET=${params.DATASET}"
+                    echo "ENVIRONMENT=${params.ENVIRONMENT}"
+                    echo "DRY_RUN=${params.DRY_RUN}"
+                    echo "COMMENT=${params.COMMENT}"
+                }
+            }
+        }
+    }
+}

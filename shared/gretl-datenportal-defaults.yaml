@@ -1,0 +1,15 @@
+execution:
+  gradleTask: publishToDatenportal
+  timeoutMinutes: 60
+
+gui:
+  fields:
+    - id: COMMENT
+      label: Kommentar
+      description: Optionaler Hinweis fuer den Jenkins-Build.
+    - id: DRY_RUN
+      description: Nur validieren, ohne Daten zu publizieren.
+
+notifications:
+  email:
+    mode: disabled
