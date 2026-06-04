@@ -16,18 +16,26 @@ pipeline {
                     if (!(params.DATASET ?: '').trim()) {
                         error('DATASET muss gesetzt sein.')
                     }
-                    if (params.ENVIRONMENT == 'production' && params.CONFIRM_PRODUCTION != true) {
-                        error('CONFIRM_PRODUCTION muss fuer production gesetzt sein.')
-                    }
                     currentBuild.displayName = "#${env.BUILD_NUMBER} ${params.ORGANISATION} / ${params.DATASET}"
                     currentBuild.description = "Lokale Datenportal-Demo: ${params.ORGANISATION} / ${params.DATASET}"
                 }
             }
         }
 
-        stage('Inspect uploads') {
+        stage('Run GRETL Datenportal Job') {
             steps {
                 script {
+                    def topicRepoDir = "${env.JENKINS_HOME}/gretl-datenportal/topic-repo"
+                    def initScript = "${topicRepoDir}/shared/gradle/init.gradle"
+                    def gradleArguments = [
+                        '--offline',
+                        '--no-daemon',
+                        '-I', initScript,
+                        '-p', params.ORGANISATION,
+                        '@@GRADLE_TASK@@',
+                        "-Pdataset=${params.DATASET}",
+                        "-Pcomment=${params.COMMENT ?: ''}"
+                    ]
                     def metadataPresent = false
                     def dataPresent = false
 
@@ -35,8 +43,8 @@ pipeline {
                         withFileParameter('METADATA_FILE') {
                             if (env.METADATA_FILE) {
                                 metadataPresent = true
-                                echo "METADATA_FILE=${env.METADATA_FILE}"
-                                echo "METADATA_FILE_FILENAME=${env.METADATA_FILE_FILENAME}"
+                                gradleArguments << "-PmetadataFile=${env.METADATA_FILE}"
+                                gradleArguments << "-PmetadataFileName=${env.METADATA_FILE_FILENAME ?: 'METADATA_FILE'}"
                             }
                         }
                     } catch (ignored) {
@@ -47,8 +55,8 @@ pipeline {
                         withFileParameter('DATA_FILE') {
                             if (env.DATA_FILE) {
                                 dataPresent = true
-                                echo "DATA_FILE=${env.DATA_FILE}"
-                                echo "DATA_FILE_FILENAME=${env.DATA_FILE_FILENAME}"
+                                gradleArguments << "-PdataFile=${env.DATA_FILE}"
+                                gradleArguments << "-PdataFileName=${env.DATA_FILE_FILENAME ?: 'DATA_FILE'}"
                             }
                         }
                     } catch (ignored) {
@@ -59,16 +67,31 @@ pipeline {
                         error('Mindestens METADATA_FILE oder DATA_FILE muss hochgeladen werden.')
                     }
 
-                    echo "ORGANISATION=${params.ORGANISATION}"
-                    echo "DATASET=${params.DATASET}"
-                    echo "ENVIRONMENT=${params.ENVIRONMENT}"
-                    echo "DRY_RUN=${params.DRY_RUN}"
-                    echo "COMMENT=${params.COMMENT}"
-                    echo "GRADLE_TASK=@@GRADLE_TASK@@"
+                    if ((params.SERIES_ID ?: '').trim()) {
+                        gradleArguments << "-PseriesId=${params.SERIES_ID}"
+                    }
+
+                    dir(topicRepoDir) {
+                        if (!fileExists('gradlew')) {
+                            error("Gradle wrapper not found in managed topic repository checkout: ${topicRepoDir}")
+                        }
+                        if (!fileExists("${params.ORGANISATION}/build.gradle")) {
+                            error("Organisation '${params.ORGANISATION}' has no build.gradle in ${topicRepoDir}")
+                        }
+
+                        sh "chmod +x ./gradlew"
+                        sh "./gradlew ${gradleArguments.collect { shellQuote(it) }.join(' ')}"
+                        archiveArtifacts allowEmptyArchive: true, artifacts: "${params.ORGANISATION}/build/reports/datenportal/*.json"
+                    }
                 }
             }
         }
     }
 
 @@POST_BLOCK@@
+}
+
+String shellQuote(Object value) {
+    String raw = value == null ? '' : value.toString()
+    return "'" + raw.replace("'", "'\"'\"'") + "'"
 }

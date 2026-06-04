@@ -1,0 +1,15 @@
+plugins {
+    id 'ch.so.agi.gretl'
+    id 'de.undercouch.download'
+}
+
+description = 'AFU Datenportal build examples using the modern GRETL plugin DSL.'
+
+ext.datenportalOrganization = [
+        id            : 'afu',
+        title         : 'AFU Datenportal publizieren',
+        label         : 'Amt fuer Umwelt',
+        defaultDataset: 'ch.so.abfall.deponien'
+]
+
+apply from: '../shared/gradle/organisation-common.gradle'

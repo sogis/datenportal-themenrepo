@@ -27,6 +27,7 @@ Temporary Items
 
 # ---> Linux
 *~
+**/__pycache__/
 
 # temporary files which can be created if a process still has a handle open of a deleted file
 .fuse_hidden*
@@ -42,6 +43,10 @@ Temporary Items
 
 # Log files created by default by the nohup command
 nohup.out
+
+# ---> Gradle
+**/.gradle/
+**/build/
 
 # ---> Windows
 # Windows thumbnail cache files
@@ -68,4 +73,3 @@ $RECYCLE.BIN/
 
 # Windows shortcuts
 *.lnk
-

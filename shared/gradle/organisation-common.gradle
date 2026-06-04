@@ -1,0 +1,213 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+if (!project.ext.has('datenportalOrganization')) {
+    throw new GradleException(
+            "Project ${project.path} must define ext.datenportalOrganization before applying ../shared/gradle/organisation-common.gradle.")
+}
+
+Map<String, Object> organization = project.ext.datenportalOrganization as Map<String, Object>
+File sharedRootDir = new File(project.projectDir.parentFile, 'shared')
+File sharedGradleDir = new File(sharedRootDir, 'gradle')
+File sharedDataDir = new File(sharedRootDir, 'data')
+
+Map<String, Map<String, Object>> loadDatasets(File organizationDir) {
+    Map<String, Map<String, Object>> datasets = [:]
+    def parser = new JsonSlurper()
+    organizationDir.eachDir { datasetDir ->
+        File datasetDefinitionFile = new File(datasetDir, 'dataset.json')
+        if (!datasetDefinitionFile.isFile()) {
+            return
+        }
+
+        def datasetDefinition = parser.parse(datasetDefinitionFile)
+        String datasetId = (datasetDefinition.id ?: datasetDir.name).toString()
+        datasets[datasetId] = [
+                dir       : datasetDir,
+                definition: datasetDefinition
+        ]
+    }
+    return datasets
+}
+
+def availableDatasets = loadDatasets(project.projectDir)
+def availableDatasetIds = availableDatasets.keySet().sort()
+
+String selectedDataset = (findProperty('dataset') ?: organization.defaultDataset ?: '').toString().trim()
+String metadataFile = (findProperty('metadataFile') ?: '').toString().trim()
+String metadataFileName = (findProperty('metadataFileName') ?: '').toString().trim()
+String dataFile = (findProperty('dataFile') ?: '').toString().trim()
+String dataFileName = (findProperty('dataFileName') ?: '').toString().trim()
+String comment = (findProperty('comment') ?: '').toString()
+String seriesId = (findProperty('seriesId') ?: '').toString().trim()
+
+Map<String, Object> selectedDatasetEntry = selectedDataset ? availableDatasets[selectedDataset] : null
+File selectedDatasetDir = selectedDatasetEntry?.dir as File
+def selectedDatasetDefinition = selectedDatasetEntry?.definition
+boolean seriesRequired = selectedDatasetDefinition?.series == true
+
+project.group = 'ch.so.agi.datenportal'
+
+project.ext.datenportalContext = [
+        organization          : organization,
+        sharedRootDir         : sharedRootDir,
+        sharedGradleDir       : sharedGradleDir,
+        sharedDataDir         : sharedDataDir,
+        availableDatasets     : availableDatasets,
+        availableDatasetIds   : availableDatasetIds,
+        selectedDataset       : selectedDataset,
+        metadataFile          : metadataFile,
+        metadataFileName      : metadataFileName,
+        dataFile              : dataFile,
+        dataFileName          : dataFileName,
+        comment               : comment,
+        seriesId              : seriesId,
+        selectedDatasetDir    : selectedDatasetDir,
+        selectedDatasetDef    : selectedDatasetDefinition,
+        seriesRequired        : seriesRequired,
+        extraGradleProperties : [:],
+        summaryLines          : []
+]
+
+if (selectedDatasetDir != null) {
+    File datasetOverride = new File(selectedDatasetDir, 'dataset.gradle')
+    if (datasetOverride.isFile()) {
+        project.ext.datenportalDatasetOverride = null
+        apply from: datasetOverride
+        def overrideClosure = project.ext.has('datenportalDatasetOverride')
+                ? project.ext.datenportalDatasetOverride
+                : null
+        if (overrideClosure instanceof Closure) {
+            overrideClosure(project.ext.datenportalContext)
+        }
+    }
+}
+
+def buildGradleArguments = {
+    Map<String, Object> ctx = project.ext.datenportalContext as Map<String, Object>
+    List<String> arguments = [
+            "-Pdataset=${ctx.selectedDataset}"
+    ]
+    if (ctx.seriesId) {
+        arguments << "-PseriesId=${ctx.seriesId}"
+    }
+    if (ctx.metadataFile) {
+        arguments << "-PmetadataFile=${ctx.metadataFile}"
+    }
+    if (ctx.metadataFileName) {
+        arguments << "-PmetadataFileName=${ctx.metadataFileName}"
+    }
+    if (ctx.dataFile) {
+        arguments << "-PdataFile=${ctx.dataFile}"
+    }
+    if (ctx.dataFileName) {
+        arguments << "-PdataFileName=${ctx.dataFileName}"
+    }
+    if (ctx.comment?.toString()?.trim()) {
+        arguments << "-Pcomment=${ctx.comment}"
+    }
+    (ctx.extraGradleProperties as Map<String, Object>).each { key, value ->
+        arguments << "-P${key}=${value}"
+    }
+    return arguments
+}
+
+def validateExecutionContext = {
+    Map<String, Object> ctx = project.ext.datenportalContext as Map<String, Object>
+
+    if (ctx.availableDatasets.isEmpty()) {
+        throw new GradleException("No datasets with dataset.json found in ${project.projectDir}.")
+    }
+    if (!ctx.selectedDataset) {
+        throw new GradleException(
+                "Property -Pdataset is required. Available datasets: ${ctx.availableDatasetIds.join(', ')}")
+    }
+    if (!ctx.availableDatasets.containsKey(ctx.selectedDataset)) {
+        throw new GradleException(
+                "Dataset '${ctx.selectedDataset}' does not exist in ${project.projectDir}. " +
+                        "Available datasets: ${ctx.availableDatasetIds.join(', ')}")
+    }
+    if (ctx.seriesRequired && !ctx.seriesId) {
+        throw new GradleException(
+                "Dataset '${ctx.selectedDataset}' requires -PseriesId because dataset.json sets 'series' to true.")
+    }
+    if (!ctx.metadataFile && !ctx.dataFile) {
+        throw new GradleException("At least one of -PmetadataFile or -PdataFile must be supplied.")
+    }
+
+    [ctx.metadataFile, ctx.dataFile]
+            .findAll { it != null && !it.toString().trim().isEmpty() }
+            .each { filePath ->
+                File uploadFile = file(filePath.toString())
+                if (!uploadFile.isFile()) {
+                    throw new GradleException("Configured upload file does not exist: ${uploadFile}")
+                }
+            }
+}
+
+tasks.register('datenportalContext') {
+    group = 'datenportal'
+    description = 'Prints the resolved context for the current organisation and dataset selection.'
+    doLast {
+        Map<String, Object> ctx = project.ext.datenportalContext as Map<String, Object>
+        def printable = [
+                organization          : ctx.organization.id,
+                dataset               : ctx.selectedDataset ?: '',
+                seriesRequired        : ctx.seriesRequired,
+                metadataFile          : ctx.metadataFile,
+                metadataFileName      : ctx.metadataFileName,
+                dataFile              : ctx.dataFile,
+                dataFileName          : ctx.dataFileName,
+                comment               : ctx.comment,
+                seriesId              : ctx.seriesId,
+                availableDatasets     : ctx.availableDatasetIds,
+                extraGradleProperties : ctx.extraGradleProperties,
+                summaryLines          : ctx.summaryLines
+        ]
+        println JsonOutput.prettyPrint(JsonOutput.toJson(printable))
+    }
+}
+
+tasks.register('verifyPluginSetup') {
+    group = 'datenportal'
+    description = 'Verifies that GRETL and the example third-party plugins are applied.'
+    doLast {
+        println "GRETL plugin applied: ${project.plugins.hasPlugin('ch.so.agi.gretl')}"
+        println "Download plugin applied: ${project.plugins.hasPlugin('de.undercouch.download')}"
+        println "SSH plugin applied: ${project.plugins.hasPlugin('org.hidetake.ssh')}"
+    }
+}
+
+tasks.register('publishToDatenportal') {
+    group = 'datenportal'
+    description = 'Resolves the current organisation/dataset context and writes an example execution summary.'
+    doLast {
+        validateExecutionContext()
+
+        Map<String, Object> ctx = project.ext.datenportalContext as Map<String, Object>
+        def summary = [
+                organization          : ctx.organization.id,
+                dataset               : ctx.selectedDataset,
+                datasetTitle          : ctx.selectedDatasetDef?.title ?: '',
+                seriesId              : ctx.seriesId,
+                metadataFile          : ctx.metadataFile,
+                metadataFileName      : ctx.metadataFileName,
+                dataFile              : ctx.dataFile,
+                dataFileName          : ctx.dataFileName,
+                comment               : ctx.comment,
+                extraGradleProperties : ctx.extraGradleProperties,
+                suggestedCommand      : buildGradleArguments(),
+                summaryLines          : ctx.summaryLines
+        ]
+
+        File summaryFile = layout.buildDirectory
+                .file("reports/datenportal/${project.name}-${ctx.selectedDataset}.json")
+                .get()
+                .asFile
+        summaryFile.parentFile.mkdirs()
+        summaryFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(summary)) + System.lineSeparator()
+
+        logger.lifecycle("Wrote example execution summary to ${summaryFile}")
+        logger.lifecycle("Resolved Gradle arguments: ${buildGradleArguments().join(' ')}")
+    }
+}

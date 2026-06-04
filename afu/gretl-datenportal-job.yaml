@@ -26,8 +26,3 @@ execution:
 notifications:
   email:
     mode: disabled
-
-gui:
-  fields:
-    - id: DRY_RUN
-      defaultValue: true
