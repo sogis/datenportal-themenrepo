@@ -75,12 +75,15 @@ pipeline {
                         if (!fileExists('gradlew')) {
                             error("Gradle wrapper not found in managed topic repository checkout: ${topicRepoDir}")
                         }
+                        if (!fileExists('shared/bin/gradlew-java17.sh')) {
+                            error("Java-17 Gradle wrapper not found in managed topic repository checkout: ${topicRepoDir}/shared/bin/gradlew-java17.sh")
+                        }
                         if (!fileExists("${params.ORGANISATION}/build.gradle")) {
                             error("Organisation '${params.ORGANISATION}' has no build.gradle in ${topicRepoDir}")
                         }
 
-                        sh "chmod +x ./gradlew"
-                        sh "./gradlew ${gradleArguments.collect { shellQuote(it) }.join(' ')}"
+                        sh "chmod +x ./gradlew ./shared/bin/gradlew-java17.sh"
+                        sh "./shared/bin/gradlew-java17.sh ${gradleArguments.collect { shellQuote(it) }.join(' ')}"
                         archiveArtifacts allowEmptyArchive: true, artifacts: "${params.ORGANISATION}/build/reports/datenportal/*.json"
                     }
                 }

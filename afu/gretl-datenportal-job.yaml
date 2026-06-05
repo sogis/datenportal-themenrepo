@@ -1,10 +1,10 @@
 id: afu
 title: AFU Datenportal publizieren
-description: Publiziert AFU-Datensaetze ins lokale Datenportal-Demo-Setup.
+description: Publiziert AFU-Datensätze ins lokale Datenportal-Demo-Setup.
 
 department:
   id: afu
-  label: Amt fuer Umwelt
+  label: Amt für Umwelt
 
 datasets:
   source:

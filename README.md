@@ -474,33 +474,42 @@ Alternativ kann `-PdatenportalOfflineJarsDir=/pfad/zum/jars` gesetzt
 werden. Fuer die Gradle-Distribution muss im Offline-Fall zusaetzlich
 `GRADLE_USER_HOME` auf das vorbereitete Bundle zeigen.
 
+Bei Jenkins-Laeufen setzt `datenportal-jenkins-dev` zusaetzlich
+`GRADLE_JAVA_HOME_17`, damit `shared/bin/gradlew-java17.sh` den Wrapper
+explizit mit Java 17 starten kann. Fuer lokale Shell-Tests kann weiterhin
+direkt `./gradlew` verwendet werden, solange `JAVA_HOME` auf Java 17 zeigt.
+
 Mit gesetztem Offline-Jar-Verzeichnis verwendet Gradle die vorbereiteten Jars
 fuer die Plugin- und Buildscript-Classpath-Resolution. Fuer harte
 Netzwerksperren braucht es zusaetzlich eine Laufzeit-Sperre auf
 Container-/Netzwerk-Ebene.
 
-### Wie `./gradlew`, `GRADLE_USER_HOME` und Offline-Jars zusammenspielen
+### Wie `shared/bin/gradlew-java17.sh`, `./gradlew`, `GRADLE_USER_HOME` und Offline-Jars zusammenspielen
 
-Im aktuellen Setup bleibt `./gradlew` der Startpunkt fuer Jenkins und lokale
-Tests. Das Image installiert nicht einfach ein globales `gradle` und ersetzt
-damit den Wrapper.
+Im aktuellen Setup bleibt der Gradle Wrapper der Startpunkt. Jenkins startet
+ihn ueber `shared/bin/gradlew-java17.sh`, lokale Tests koennen weiterhin direkt
+`./gradlew` verwenden. Das Image installiert nicht einfach ein globales
+`gradle` und ersetzt damit den Wrapper nicht.
 
 Der Ablauf ist stattdessen:
 
 1. `shared/Jenkinsfile` wechselt ins ausgecheckte Themenrepo und startet
-   `./gradlew`.
-2. Der Wrapper liest `gradle/wrapper/gradle-wrapper.properties`.
-3. Die dort konfigurierte Gradle-Distribution wird unter
+   `shared/bin/gradlew-java17.sh`.
+2. Der Wrapper setzt `JAVA_HOME` aus `GRADLE_JAVA_HOME_17` und ruft dann
+   `./gradlew` auf.
+3. `./gradlew` liest `gradle/wrapper/gradle-wrapper.properties`.
+4. Die dort konfigurierte Gradle-Distribution wird unter
    `GRADLE_USER_HOME/wrapper/dists` erwartet.
-4. `datenportal-jenkins-dev` bereitet genau diesen Wrapper-Cache im
+5. `datenportal-jenkins-dev` bereitet genau diesen Wrapper-Cache im
    Offline-Bundle vor.
-5. `shared/gradle/init.gradle` bindet zusaetzlich die vorbereiteten Offline-Jars
+6. `shared/gradle/init.gradle` bindet zusaetzlich die vorbereiteten Offline-Jars
    aus `DATENPORTAL_OFFLINE_JARS_DIR` fuer Buildscript- und Plugin-Aufloesung
    ein.
 
 Damit gilt:
 
-- `./gradlew` startet Gradle.
+- `shared/bin/gradlew-java17.sh` erzwingt Java 17 fuer Jenkins-Builds.
+- `./gradlew` startet den eigentlichen Gradle-Prozess.
 - `GRADLE_USER_HOME` liefert die passende Gradle-Distribution und Wrapper-Caches.
 - `DATENPORTAL_OFFLINE_JARS_DIR` liefert die offline vorbereiteten Plugin- und
   Runtime-Jars.

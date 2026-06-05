@@ -8,7 +8,7 @@ description = 'AFU Datenportal build examples using the modern GRETL plugin DSL.
 ext.datenportalOrganization = [
         id            : 'afu',
         title         : 'AFU Datenportal publizieren',
-        label         : 'Amt fuer Umwelt',
+        label         : 'Amt für Umwelt',
         defaultDataset: 'ch.so.abfall.deponien'
 ]
 
