@@ -1,5 +1,0 @@
-ext.datenportalDatasetOverride = { ctx ->
-    ctx.extraGradleProperties['officeFile'] = new File(ctx.sharedDataDir, 'offices.xtf').absolutePath
-    ctx.extraGradleProperties['publisherMode'] = 'waterquality'
-    ctx.summaryLines << 'Dataset override active: Wasserqualitaet uses the shared offices.xtf reference file.'
-}

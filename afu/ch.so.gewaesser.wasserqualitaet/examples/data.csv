@@ -1,4 +1,0 @@
-station_id,measurement_date,parameter,value,unit
-SO-001,2026-05-01,temperature,12.4,C
-SO-001,2026-05-01,ph,7.6,pH
-SO-002,2026-05-01,temperature,11.8,C
