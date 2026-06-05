@@ -1,0 +1,9 @@
+= Build-Kaskade
+
+[source,text]
+----
+shared/gradle/init.gradle
+-> shared/gradle/organisation-common.gradle
+-> <organisation>/build.gradle
+-> <organisation>/<dataset>/dataset.gradle
+----

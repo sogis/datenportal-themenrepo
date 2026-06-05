@@ -1,0 +1,17 @@
+items:
+  - title: Überblick
+    page: index.adoc
+  - title: Repo-Struktur
+    page: repo-struktur.adoc
+  - title: Neue Organisation
+    page: neue-organisation.adoc
+  - title: Neuer Datensatz
+    page: neuer-datensatz.adoc
+  - title: Build-Kaskade
+    page: build-kaskade.adoc
+  - title: Referenz
+    children:
+      - title: gretl-datenportal-job.yaml
+        page: referenz/gretl-datenportal-job-yaml.adoc
+      - title: dataset.json
+        page: referenz/dataset-json.adoc

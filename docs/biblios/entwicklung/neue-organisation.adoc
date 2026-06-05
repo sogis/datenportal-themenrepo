@@ -1,0 +1,8 @@
+= Neue Organisation
+
+. Organisationsordner anlegen
+. `gretl-datenportal-job.yaml` erstellen
+. `build.gradle` erstellen
+. mindestens einen Datensatz anlegen
+. committen
+. Seed-Job ausführen

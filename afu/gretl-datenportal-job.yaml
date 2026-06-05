@@ -1,27 +1,11 @@
-id: afu
 title: AFU Datenportal publizieren
 description: Publiziert AFU-Datensätze ins lokale Datenportal-Demo-Setup.
-
-department:
-  id: afu
-  label: Amt für Umwelt
-
-datasets:
-  source:
-    type: subdirectories
-    path: "."
 
 permissions:
   read:
     - GA_Gretl_Datenportal_Read
   build:
     - GA_Gretl_Datenportal_AFU
-
-execution:
-  type: jenkinsPipeline
-  jobName: gretl-datenportal-afu
-  gradleTask: publishToDatenportal
-  timeoutMinutes: 60
 
 notifications:
   email:

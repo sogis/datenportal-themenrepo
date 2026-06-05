@@ -1,0 +1,3 @@
+= Entwicklung: Themenrepo-Vertrag
+
+Dieser Bereich beschreibt die Struktur und den Vertrag des Themenrepos.

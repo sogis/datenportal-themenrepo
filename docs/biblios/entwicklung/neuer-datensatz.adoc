@@ -1,0 +1,5 @@
+= Neuer Datensatz
+
+Ein Datensatz benötigt einen eigenen Ordner und eine `dataset.json`.
+
+Optional kann ein `dataset.gradle` ergänzt werden.
