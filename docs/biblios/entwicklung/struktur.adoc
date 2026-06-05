@@ -1,0 +1,103 @@
+= Erwartete Repository-Struktur
+:page-layout: docs
+:toc: macro
+:toclevels: 2
+
+include::_partials/aktueller-vertrag.adoc[]
+
+toc::[]
+
+== Grundstruktur
+
+Das Themenrepo besteht aus einem gemeinsamen Bereich `shared/` und je einem Top-Level-Ordner pro Organisation.
+
+[source,text]
+----
+shared/
+  gretl-datenportal-defaults.yaml
+  Jenkinsfile
+  bin/
+    gradlew-java17.sh
+  gradle/
+    gradle-build.properties
+    init.gradle
+    organisation-common.gradle
+  data/
+    offices.xtf
+
+<organisation>/
+  build.gradle
+  gretl-datenportal-job.yaml
+  Jenkinsfile                  # optional
+  <dataset>/
+    <datenblatt>.xtf           # genau eine .xtf- oder .xml-Datei
+    dataset.gradle             # optional
+----
+
+== Gemeinsamer Bereich `shared/`
+
+Der Ordner `shared/` enthält repo-weite Vorgaben und gemeinsame Build-Logik.
+
+[cols="1,3",options="header"]
+|===
+| Datei oder Ordner | Bedeutung
+
+| `shared/gretl-datenportal-defaults.yaml`
+| Optionale repo-weite Defaults, zum Beispiel `gradleTask`, `timeoutMinutes` und Notifications.
+
+| `shared/Jenkinsfile`
+| Gemeinsames Default-Pipeline-Skript für Organisationen ohne eigenes Jenkinsfile.
+
+| `shared/bin/gradlew-java17.sh`
+| Java-17-Wrapper für Jenkins-Läufe. Er startet den Gradle Wrapper mit der von Jenkins gesetzten Java-17-Laufzeit.
+
+| `shared/gradle/init.gradle`
+| Zentrale Gradle-Initialisierung für Plugin- und Dependency-Repositories sowie Online-/Offline-Auflösung.
+
+| `shared/gradle/organisation-common.gradle`
+| Gemeinsame Build-Logik für alle Organisationen. Sie liest Jenkins-/Gradle-Parameter und bindet optional datensatzspezifische `dataset.gradle`-Dateien ein.
+
+| `shared/gradle/gradle-build.properties`
+| Source of Truth für Plugin-Versionen, Repository-URLs und Offline-Seed-Koordinaten.
+
+| `shared/data/`
+| Gemeinsame Referenzdaten, zum Beispiel `offices.xtf`.
+|===
+
+== Organisationsordner
+
+Ein Top-Level-Ordner ist nur dann eine Organisation, wenn er eine gültige `gretl-datenportal-job.yaml` enthält. Technische Top-Level-Ordner werden ignoriert, solange sie nicht wie unvollständige Organisationsordner aussehen.
+
+[source,text]
+----
+afu/
+  build.gradle
+  gretl-datenportal-job.yaml
+  Jenkinsfile
+  ch.so.umwelt.beispiel/
+    ch.so.umwelt.beispiel.xtf
+    dataset.gradle
+----
+
+== Datensatzordner
+
+Ein Unterordner einer Organisation gilt als Datensatz, wenn er genau eine Datenblattdatei mit Endung `.xtf` oder `.xml` enthält.
+
+[source,text]
+----
+<organisation>/
+  <dataset-id>/
+    <dataset-id>.xtf
+----
+
+Ordnernamen, die wie Datensatz-IDs aussehen, aber keine passende Datenblattdatei enthalten, sind Validierungsfehler. Andere technische Unterordner werden ignoriert.
+
+== Bewusst nicht Teil der Struktur
+
+Folgende Elemente gehören nicht zum Themenrepo-Vertrag:
+
+* `dataset-gui.yaml`;
+* `gui`-Blöcke in YAML;
+* frei definierbare Formularfelder im Themenrepo;
+* ein globales `build.gradle` für alle Organisationen;
+* ein eigenes `build.gradle` pro Datensatz.

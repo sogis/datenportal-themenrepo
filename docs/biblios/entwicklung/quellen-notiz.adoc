@@ -1,0 +1,12 @@
+= Quellen- und Redaktionsnotiz
+:page-layout: docs
+
+Diese Seite ist nicht in der Navigation eingehängt.
+
+Die Dokumentation wurde aus den README-Dateien der technischen Repositories neu geschnitten:
+
+* `datenportal-themenrepo`
+* `datenportal-jenkins-dev`
+* `jenkins-gretl-datenportal-plugin`
+
+Bei Widersprüchen wurde für den «Themenrepo-Vertrag» die aktuelle Plugin-Implementierung als massgebend behandelt.

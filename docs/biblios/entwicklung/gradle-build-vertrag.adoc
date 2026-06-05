@@ -1,0 +1,86 @@
+= Gradle-Build-Vertrag
+:page-layout: docs
+:toc: macro
+:toclevels: 2
+
+toc::[]
+
+== Grundidee
+
+Der Gradle-Build im Themenrepo ist bewusst hierarchisch aufgebaut. Die gemeinsame Logik liegt im `shared/`-Bereich, Organisationen binden sie ein und Datensätze können optional Ergänzungen liefern.
+
+[source,text]
+----
+shared/gradle/init.gradle
+-> shared/gradle/organisation-common.gradle
+-> <organisation>/build.gradle
+-> <organisation>/<dataset>/dataset.gradle
+----
+
+== Kein globales `build.gradle`
+
+Es gibt kein globales `build.gradle` für alle Organisationen. Jede Organisation hat ihr eigenes `build.gradle`.
+
+[source,text]
+----
+afu/build.gradle
+statistikdienst/build.gradle
+----
+
+Der Gradle Wrapper wird im Repo-Root gestartet, aber mit `-p <organisation>` auf das jeweilige Organisationsprojekt gesetzt.
+
+[source,bash]
+----
+./gradlew -I "$PWD/shared/gradle/init.gradle" -p afu tasks
+./gradlew -I "$PWD/shared/gradle/init.gradle" -p statistikdienst verifyPluginSetup
+----
+
+== Organisationsspezifisches `build.gradle`
+
+Das `build.gradle` einer Organisation ist ein dünner Einstiegspunkt. Es aktiviert die benötigten Gradle-Plugins und bindet die gemeinsame Build-Logik ein.
+
+[source,groovy]
+----
+plugins {
+    id 'ch.so.agi.gretl'
+}
+
+apply from: '../shared/gradle/organisation-common.gradle'
+----
+
+== `shared/gradle/init.gradle`
+
+`shared/gradle/init.gradle` ist die zentrale Gradle-Initialisierung. Es liest Plugin-Versionen und Repository-Listen aus `shared/gradle/gradle-build.properties` und stellt die Online-/Offline-Auflösung bereit.
+
+== `shared/gradle/gradle-build.properties`
+
+Diese Datei ist die Source of Truth für:
+
+* Plugin-IDs;
+* Plugin-Versionen;
+* Online-Repositories;
+* Plugin-Repositories;
+* Offline-Seed-Koordinaten.
+
+Neue Repositories oder Gradle-Plugins werden hier gepflegt und anschliessend in `shared/gradle/init.gradle` verdrahtet, falls ein Offline-Mapping nötig ist.
+
+== `dataset.gradle`
+
+Ein Datensatz kann optional ein `dataset.gradle` enthalten. Es wird nur geladen, wenn der Datensatz zur Laufzeit ausgewählt wurde.
+
+Typische Einsatzzwecke:
+
+* datensatzspezifische Properties;
+* zusätzliche GRETL-Tasks;
+* kleine Abweichungen im Publikationsablauf.
+
+Nicht geeignet ist `dataset.gradle` für:
+
+* Jenkins-Job-Generierung;
+* zusätzliche Formularfelder;
+* Berechtigungen;
+* Organisation-Defaults.
+
+== GRETL-Auflösung
+
+GRETL wird online über die zentralen Repository-Listen aufgelöst. Für SNAPSHOT-Versionen muss beim Bau des Offline-Bundles mit aktualisierten Abhängigkeiten gerechnet werden. Das Offline-Bundle wird nicht im Themenrepo erzeugt, sondern im Jenkins-/Image-Repo vorbereitet.

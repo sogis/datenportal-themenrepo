@@ -1,3 +1,41 @@
 = Entwicklung: Themenrepo-Vertrag
+:page-layout: docs
+:toc: macro
+:toclevels: 2
 
-Dieser Bereich beschreibt die Struktur und den Vertrag des Themenrepos.
+include::_partials/aktueller-vertrag.adoc[]
+
+Das Themenrepo ist der fachliche Vertrag zwischen Datenportal, Jenkins-Plugin und GRETL-Builds. Es beschreibt, welche Organisationen am Datenportal teilnehmen, welche Datensätze publiziert werden können und mit welchen Defaults die generierten Jenkins-Jobs ausgeführt werden.
+
+Diese Doku richtet sich an Entwicklerinnen, Entwickler und technische Maintainer. Sie erklärt nicht primär, wie Datenlieferanten eine Datei hochladen, sondern wie das Repository aufgebaut sein muss, damit das Jenkins-Plugin daraus valide Jobs, Startformulare und Ausführungslogik erzeugen kann.
+
+toc::[]
+
+== Was gehört in diesen Bereich?
+
+Dieser Bereich beschreibt:
+
+* die erwartete Struktur des Themenrepos;
+* die Marker-Dateien für Organisationen und Datensätze;
+* die Bedeutung von `gretl-datenportal-job.yaml`;
+* die Auflösung von `shared/Jenkinsfile` und organisationsspezifischen Jenkinsfiles;
+* den Gradle-Build-Vertrag zwischen Themenrepo und Jenkins;
+* das Zusammenspiel mit Offline-Bundle, Java 17 und Java 21;
+* Maintainer-Workflows für neue Organisationen, neue Datensätze und Seed-Läufe.
+
+== Was gehört nicht in diesen Bereich?
+
+Nicht behandelt werden hier:
+
+* fachliche Anleitung für Datenlieferanten;
+* Bedienung des Anlieferformulars aus Endnutzersicht;
+* Betrieb des Jenkins-Controllers im Detail;
+* Entwicklung des Jenkins-Plugins selbst.
+
+Diese Themen gehören in die Bereiche «Daten anliefern», «Betrieb und Administration» oder «Entwicklung: Jenkins-Plugin».
+
+== Kurzfassung
+
+Das Themenrepo ist keine lose Dateisammlung. Es ist ein maschinenlesbarer Vertrag. Das Jenkins-Plugin scannt das Repository, erkennt valide Organisationen und Datensätze, wendet Berechtigungen und Defaults an und materialisiert daraus Jenkins-Jobs.
+
+Eine Organisation ist ein Top-Level-Ordner mit gültiger `gretl-datenportal-job.yaml`. Ein Datensatz ist ein Unterordner einer Organisation mit genau einer `.xtf`- oder `.xml`-Datenblattdatei. Das Startformular ist fix und wird nicht mehr über YAML im Themenrepo konfiguriert.

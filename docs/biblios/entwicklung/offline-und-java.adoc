@@ -1,0 +1,75 @@
+= Offline-Bundle und Java-Laufzeiten
+:page-layout: docs
+:toc: macro
+:toclevels: 2
+
+toc::[]
+
+== Abgrenzung
+
+Das Offline-Bundle wird nicht im Themenrepo gebaut. Zuständig ist das Repository `datenportal-jenkins-dev`.
+
+Das Themenrepo muss aber so aufgebaut sein, dass der vorbereitete Offline-Vertrag funktioniert.
+
+== Bestandteile des Offline-Bundles
+
+Das Offline-Bundle besteht aus zwei Teilen:
+
+[cols="1,3",options="header"]
+|===
+| Bestandteil | Zweck
+
+| `gradle-user-home`
+| Enthält die Gradle-Distribution und Wrapper-Caches, die vom Themenrepo-Wrapper benötigt werden.
+
+| `jars`
+| Enthält die offline vorbereiteten Plugin- und Runtime-Jars.
+|===
+
+Zur Laufzeit werden dafür typischerweise diese Umgebungsvariablen gesetzt:
+
+[source,bash]
+----
+GRADLE_USER_HOME=/pfad/zum/offline-bundle/gradle-user-home
+DATENPORTAL_OFFLINE_JARS_DIR=/pfad/zum/offline-bundle/jars
+----
+
+== Java 21 und Java 17
+
+Die lokale Jenkins-Umgebung trennt die Java-Laufzeiten bewusst:
+
+[cols="1,2",options="header"]
+|===
+| Laufzeit | Verwendung
+
+| Java 21
+| Jenkins-Controller und Jenkins-Plugin-Build.
+
+| Java 17
+| GRETL, Gradle-Builds im Themenrepo und Offline-Bundle.
+|===
+
+Jenkins setzt dafür `GRADLE_JAVA_HOME_17`. Die generierten Jobs starten den Gradle Wrapper über `shared/bin/gradlew-java17.sh`.
+
+== Ablauf in Jenkins
+
+Der Laufzeitvertrag sieht vereinfacht so aus:
+
+. Jenkins checkt das Themenrepo aus.
+. `shared/Jenkinsfile` wechselt in den Repo-Root.
+. Die Pipeline startet `shared/bin/gradlew-java17.sh`.
+. Der Wrapper setzt `JAVA_HOME` aus `GRADLE_JAVA_HOME_17`.
+. `./gradlew` liest `gradle/wrapper/gradle-wrapper.properties`.
+. Die Gradle-Distribution wird unter `GRADLE_USER_HOME/wrapper/dists` gesucht.
+. `shared/gradle/init.gradle` bindet `DATENPORTAL_OFFLINE_JARS_DIR` ein.
+
+== Lokaler Offline-Test
+
+[source,bash]
+----
+GRADLE_USER_HOME="/Users/stefan/sources/datenportal-jenkins-dev/build/offline-bundle/gradle-user-home" \
+DATENPORTAL_OFFLINE_JARS_DIR="/Users/stefan/sources/datenportal-jenkins-dev/build/offline-bundle/jars" \
+./gradlew --offline -I "$PWD/shared/gradle/init.gradle" -p afu tasks
+----
+
+Für harte Airgap-Tests genügt `--offline` allein nicht. Zusätzlich muss der Container oder Prozess ohne Netzwerkzugang laufen.

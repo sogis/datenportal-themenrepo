@@ -1,0 +1,62 @@
+= Jenkinsfile-Auflösung
+:page-layout: docs
+:toc: macro
+:toclevels: 2
+
+toc::[]
+
+== Zweck
+
+Das Themenrepo kann ein gemeinsames Jenkinsfile oder organisationsspezifische Jenkinsfiles bereitstellen. Das Jenkins-Plugin entscheidet beim Seed-Lauf, welches Jenkinsfile für den generierten Job verwendet wird.
+
+== Auflösungsreihenfolge
+
+Die Auflösung erfolgt in dieser Reihenfolge:
+
+[source,text]
+----
+execution.jenkinsfile aus <organisation>/gretl-datenportal-job.yaml
+-> <organisation>/Jenkinsfile
+-> execution.jenkinsfile aus shared/gretl-datenportal-defaults.yaml
+-> shared/Jenkinsfile
+----
+
+Der erste vorhandene und gültige Pfad gewinnt.
+
+== Gemeinsames `shared/Jenkinsfile`
+
+`shared/Jenkinsfile` ist das kanonische repo-weite Default-Pipeline-Skript. Es muss vorhanden sein, wenn keine spezifischere Jenkinsfile-Konfiguration greift.
+
+Das gemeinsame Jenkinsfile darf folgende Platzhalter verwenden:
+
+[cols="1,3",options="header"]
+|===
+| Platzhalter | Bedeutung
+
+| `@@TIMEOUT_MINUTES@@`
+| Wird aus dem effektiven `timeoutMinutes` ersetzt.
+
+| `@@GRADLE_TASK@@`
+| Wird aus dem effektiven `gradleTask` ersetzt.
+
+| `@@POST_BLOCK@@`
+| Wird aus der effektiven Notification-Konfiguration gerendert.
+|===
+
+== Platzhalterersetzung
+
+Die Platzhalter sind einfache Textmarker. Sie sind kein Groovy-Template und keine Jenkins-Funktion.
+
+Regeln:
+
+* Nur exakt bekannte Marker werden ersetzt.
+* Die Ersetzung erfolgt nur für das implizite repo-weite `shared/Jenkinsfile`.
+* Organisationsspezifische `Jenkinsfile`-Dateien werden wörtlich geladen.
+* Explizit konfigurierte `execution.jenkinsfile`-Pfade werden wörtlich geladen.
+* Unbekannte Marker bleiben unverändert.
+
+== Empfehlung
+
+Für den Normalfall sollte `shared/Jenkinsfile` genügen. Organisationsspezifische Jenkinsfiles sollten nur verwendet werden, wenn eine Organisation tatsächlich abweichende Pipeline-Logik braucht.
+
+Je mehr Spezial-Jenkinsfiles vorhanden sind, desto schwieriger werden Wartung, Fehleranalyse und Plugin-Änderungen.

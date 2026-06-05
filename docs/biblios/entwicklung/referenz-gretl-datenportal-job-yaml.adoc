@@ -1,0 +1,93 @@
+= Referenz: gretl-datenportal-job.yaml
+:page-layout: docs
+:toc: macro
+:toclevels: 2
+
+toc::[]
+
+== Zweck
+
+`gretl-datenportal-job.yaml` ist die zwingende Konfiguration einer Organisation. Ohne diese Datei ist ein Top-Level-Ordner keine gültige Organisation.
+
+== Minimales Beispiel
+
+[source,yaml]
+----
+permissions:
+  read:
+    - GA_Gretl_Datenportal_Read
+  build:
+    - GA_Gretl_Datenportal_AFU
+----
+
+== Felder
+
+[cols="1,1,2,1",options="header"]
+|===
+| Feld | Pflicht | Verhalten / Default | Effektiv verwendet
+
+| `title`
+| Nein
+| Fällt auf die effektive Organisations-ID zurück.
+| Ja
+
+| `description`
+| Nein
+| Leerer Text.
+| Ja
+
+| `permissions.read`
+| Ja
+| Muss mindestens eine Gruppe enthalten.
+| Ja
+
+| `permissions.build`
+| Ja
+| Muss mindestens eine Gruppe enthalten.
+| Ja
+
+| `execution.jobName`
+| Nein
+| `gretl-datenportal-<organisation>`
+| Ja
+
+| `execution.gradleTask`
+| Nein
+| Organisation, sonst Shared Defaults, sonst `publishToDatenportal`.
+| Ja
+
+| `execution.timeoutMinutes`
+| Nein
+| Organisation, sonst Shared Defaults, sonst `60`.
+| Ja
+
+| `execution.jenkinsfile`
+| Nein
+| Wird über die Jenkinsfile-Auflösung bestimmt.
+| Ja
+
+| `notifications`
+| Nein
+| Optionaler Organisations-Override. Shared Defaults gelten weiter, wenn vorhanden.
+| Ja
+
+| `department`
+| Nein
+| Wird von dieser Plugin-Version ignoriert.
+| Nein
+
+| `datasets`
+| Nein
+| Wird von dieser Plugin-Version ignoriert. Datensätze werden aus Unterordnern mit XTF/XML-Datenblatt erkannt.
+| Nein
+|===
+
+== Regeln
+
+* Der Ordnername ist die kanonische Organisations-ID.
+* Ein YAML-Feld `id` ist für Organisation-Jobs nicht massgebend.
+* `permissions.read` und `permissions.build` müssen gesetzt und nicht leer sein.
+* `execution.*` in der Organisation überschreibt Shared Defaults.
+* Fehlende `notifications` deaktivieren Shared Notifications nicht.
+* `gui`-Blöcke sind nicht erlaubt.
+* Jenkins-Administratoren behalten ihren bestehenden Bypass für Lesen und Build.

@@ -1,0 +1,86 @@
+= Organisationen
+:page-layout: docs
+:toc: macro
+:toclevels: 2
+
+include::_partials/aktueller-vertrag.adoc[]
+
+toc::[]
+
+== Erkennung
+
+Eine Organisation ist ein Top-Level-Ordner mit gültiger `gretl-datenportal-job.yaml`.
+
+[source,text]
+----
+afu/
+  build.gradle
+  gretl-datenportal-job.yaml
+  ch.so.umwelt.beispiel/
+    ch.so.umwelt.beispiel.xtf
+----
+
+Der Ordnername ist die kanonische Organisations-ID. Ein YAML-Feld `id` wird für Organisation-Jobs nicht als massgebend verwendet.
+
+== Pflichtdateien
+
+Eine valide Organisation braucht mindestens:
+
+[cols="1,3",options="header"]
+|===
+| Datei | Zweck
+
+| `gretl-datenportal-job.yaml`
+| Technisch zwingende Konfiguration. Ohne diese Datei ist der Ordner keine gültige Organisation.
+
+| `build.gradle`
+| Organisationsspezifischer Gradle-Einstieg. Er aktiviert die benötigten Plugins und bindet die gemeinsame Build-Logik ein.
+|===
+
+Ein organisationsspezifisches `Jenkinsfile` ist optional. Es überschreibt das gemeinsame `shared/Jenkinsfile`, wenn keine noch spezifischere `execution.jenkinsfile`-Konfiguration greift.
+
+== Minimale Organisation-Konfiguration
+
+[source,yaml]
+----
+permissions:
+  read:
+    - GA_Gretl_Datenportal_Read
+  build:
+    - GA_Gretl_Datenportal_AFU
+----
+
+`permissions.read` und `permissions.build` sind Pflichtfelder. Beide Listen müssen mindestens eine Gruppe enthalten. Fehlende oder leere Berechtigungen machen die Organisation ungültig.
+
+== Optionale Metadaten
+
+[source,yaml]
+----
+title: Amt für Umwelt
+description: Publikationsjobs für Daten des Amts für Umwelt.
+
+execution:
+  jobName: gretl-datenportal-afu
+  gradleTask: publishToDatenportal
+  timeoutMinutes: 60
+
+notifications:
+  email:
+    enabled: true
+    recipients:
+      - datenportal@example.org
+----
+
+`title` und `description` werden für Anzeige und Beschreibung verwendet. `execution.*` überschreibt repo-weite Defaults. `notifications` kann organisationsspezifische Benachrichtigungen definieren.
+
+== Fehlerfälle
+
+Eine Organisation ist ungültig, wenn:
+
+* `gretl-datenportal-job.yaml` fehlt;
+* die YAML-Datei nicht geparst werden kann;
+* `permissions.read` oder `permissions.build` fehlt oder leer ist;
+* `gui`-Blöcke verwendet werden;
+* der Ordner offensichtlich Organisation-Inhalt enthält, aber unvollständig ist.
+
+Ungültige Organisationen werden beim Scan gemeldet und beim Seed-Lauf ignoriert.

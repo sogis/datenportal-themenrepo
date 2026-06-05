@@ -1,0 +1,61 @@
+= Neuen Datensatz anlegen
+:page-layout: docs
+:toc: macro
+:toclevels: 2
+
+include::_partials/aktueller-vertrag.adoc[]
+
+toc::[]
+
+== Ziel
+
+Ein neuer Datensatz soll einer bestehenden Organisation hinzugefügt werden.
+
+== Minimaler Ablauf
+
+. Datensatzordner unter der Organisation anlegen.
+. Genau eine `.xtf`- oder `.xml`-Datenblattdatei in den Ordner legen.
+. Optional `dataset.gradle` ergänzen.
+. Änderungen committen.
+. Seed-Job erneut ausführen.
+
+== Beispiel
+
+[source,text]
+----
+afu/
+  ch.so.umwelt.neuer_datensatz/
+    ch.so.umwelt.neuer_datensatz.xtf
+----
+
+== Mit datensatzspezifischem Build-Override
+
+[source,text]
+----
+afu/
+  ch.so.umwelt.neuer_datensatz/
+    ch.so.umwelt.neuer_datensatz.xtf
+    dataset.gradle
+----
+
+`dataset.gradle` darf nur Build-Logik ergänzen. Es ändert keine Jenkins-Job-Konfiguration und keine Startformular-Felder.
+
+== Datensatzserie
+
+Wenn das Datenblatt eine `DatasetSeries` beschreibt, zeigt das fixe Startformular zusätzlich `SERIES_ID` an. Dieses Verhalten wird aus dem Datenblatt abgeleitet und nicht über eine separate YAML-Konfiguration gesetzt.
+
+== Häufige Fehler
+
+[cols="1,2",options="header"]
+|===
+| Fehler | Folge
+
+| Keine `.xtf`- oder `.xml`-Datei im Datensatzordner
+| Der Datensatz ist ungültig.
+
+| Mehr als eine `.xtf`- oder `.xml`-Datei im Datensatzordner
+| Der Datensatz ist mehrdeutig.
+
+| Erwartung zusätzlicher Formularfelder aus dem Datensatzordner
+| Nicht unterstützt.
+|===

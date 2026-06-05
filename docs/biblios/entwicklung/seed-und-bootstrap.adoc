@@ -1,0 +1,56 @@
+= Seed-Lauf und Bootstrap
+:page-layout: docs
+:toc: macro
+:toclevels: 2
+
+toc::[]
+
+== Zweck des Seed-Laufs
+
+Der Seed-Lauf scannt das Themenrepo und erzeugt oder aktualisiert die materialisierten Jenkins-Jobs. Die generierten Jobs sind keine Live-Ansicht auf das Repository.
+
+== Wann muss neu geseedet werden?
+
+Ein Seed-Lauf ist nötig nach Änderungen an:
+
+* Organisationen oder Datensätzen;
+* `gretl-datenportal-job.yaml`;
+* `shared/gretl-datenportal-defaults.yaml`;
+* `shared/Jenkinsfile`;
+* Gradle-Build-Logik, wenn sich dadurch die generierten Jobs oder ihr Verhalten ändern;
+* dem Jenkins-Plugin, wenn sich Scanner-, Validierungs- oder Jobgenerator-Logik geändert hat.
+
+== Lokaler Bootstrap
+
+Nach einem frischen lokalen Checkout ist zunächst nur der per JCasC erzeugte Seed-Job vorhanden. Die generierten Organisation-Jobs entstehen erst nach dem Seed-Lauf.
+
+[source,text]
+----
+gretl-datenportal-plugin-generator-local
+----
+
+Nach einem erfolgreichen Lauf sollten die erwarteten Organisationsjobs vorhanden sein, zum Beispiel:
+
+[source,text]
+----
+gretl-datenportal-afu
+gretl-datenportal-statistikdienst
+----
+
+== Was versioniert ist
+
+Versioniert sind:
+
+* Themenrepo-Inhalte;
+* Shared Defaults;
+* Jenkinsfiles;
+* Gradle-Build-Logik;
+* Datenblätter.
+
+Nicht versioniert sind lokal erzeugte Jenkins-Jobs, Build-Historien und das lokale Checkout unter `jenkins-home/gretl-datenportal`.
+
+== Nach Plugin-Änderungen
+
+Nach einer Änderung am Jenkins-Plugin reicht es nicht, die `.jpi` zu überschreiben. Jenkins muss neu gestartet werden, damit Klassen, Deskriptoren und Jelly-Views neu geladen werden.
+
+Danach ist ein Seed-Lauf notwendig, damit bestehende generierte Jobs neue Pipeline-Inhalte oder neue Generatorlogik übernehmen.

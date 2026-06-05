@@ -1,0 +1,51 @@
+= Zweck des Themenrepos
+:page-layout: docs
+:toc: macro
+:toclevels: 2
+
+include::_partials/aktueller-vertrag.adoc[]
+
+toc::[]
+
+== Rolle im Gesamtsystem
+
+Das Themenrepo ist die fachliche Quelle für das Jenkins-Plugin. Es enthält nicht den Jenkins-Controller, nicht das Plugin selbst und nicht den vollständigen Betrieb. Stattdessen liefert es dem Plugin die Informationen, aus denen Jenkins-Jobs und das Datenportal-Startformular aufgebaut werden.
+
+Das Repository beantwortet aus Sicht des Plugins drei Fragen:
+
+. Welche Organisationen gibt es?
+. Welche Datensätze gehören zu diesen Organisationen?
+. Welche gemeinsamen und organisationsspezifischen Ausführungsregeln gelten?
+
+== Abgrenzung zu anderen Repositories
+
+Das Themenrepo ist ein Consumer des Betriebs- und Plugin-Setups. Der Jenkins-Controller und das Image werden im Repo `datenportal-jenkins-dev` vorbereitet. Das Jenkins-Plugin wird im Repo `jenkins-gretl-datenportal-plugin` entwickelt. Das Themenrepo selbst enthält den fachlichen Input für diese Infrastruktur.
+
+[cols="1,2,2",options="header"]
+|===
+| Repository | Rolle | Gehört hierher?
+
+| `datenportal-themenrepo`
+| Organisationen, Datensätze, Shared Defaults, Gradle-Build-Vertrag
+| Ja
+
+| `jenkins-gretl-datenportal-plugin`
+| Scanner, UI, Job-Generator, Berechtigungsprüfung, Pipeline-Rendering
+| Nein, nur die vom Plugin erwarteten Verträge werden hier beschrieben
+
+| `datenportal-jenkins-dev`
+| lokaler Jenkins, JCasC, Offline-Bundle, Image-Build, Java-Laufzeiten
+| Nein, nur Schnittstellen zum Themenrepo werden hier beschrieben
+|===
+
+== Warum dieser Vertrag wichtig ist
+
+Das Plugin erzeugt Jenkins-Jobs nicht dynamisch bei jedem Seitenaufruf, sondern materialisiert sie über einen Seed-Lauf. Fehler im Themenrepo führen deshalb nicht nur zu kaputten Dateien, sondern zu fehlenden oder ungültigen Jenkins-Jobs.
+
+Der Vertrag ist deshalb bewusst streng:
+
+* Organisationen brauchen eine gültige `gretl-datenportal-job.yaml`.
+* Datensätze brauchen genau eine Datenblattdatei mit Endung `.xtf` oder `.xml`.
+* Berechtigungen müssen explizit gesetzt sein.
+* GUI-Konfigurationen im Themenrepo werden zurückgewiesen.
+* Nach strukturellen Änderungen ist ein Seed-Lauf notwendig.
