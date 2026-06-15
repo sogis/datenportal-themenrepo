@@ -101,3 +101,8 @@ Folgende Elemente gehören nicht zum Themenrepo-Vertrag:
 * frei definierbare Formularfelder im Themenrepo;
 * ein globales `build.gradle` für alle Organisationen;
 * ein eigenes `build.gradle` pro Datensatz.
+
+== Weiterführend
+
+* Wie das Plugin diese Struktur scannt und welche Fehlermeldungen daraus entstehen, ist im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] dokumentiert.
+* Wie diese Struktur lokal in Jenkins ausgecheckt und getestet wird, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] dokumentiert.

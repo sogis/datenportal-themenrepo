@@ -65,3 +65,8 @@ ch.so.gewaesser.messstellen/
 ----
 
 Die Datenblattdatei darf technisch anders heissen. Für Lesbarkeit und Fehlersuche ist es aber sinnvoll, denselben Namen wie den Ordner zu verwenden.
+
+== Weiterführend
+
+* Wie Datensätze technisch erkannt und validiert werden, ist im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] beschrieben.
+* Wie Datensätze lokal gegen Jenkins und das Offline-Bundle getestet werden, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.

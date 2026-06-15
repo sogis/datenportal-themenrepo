@@ -91,3 +91,8 @@ permissions:
 * Fehlende `notifications` deaktivieren Shared Notifications nicht.
 * `gui`-Blöcke sind nicht erlaubt.
 * Jenkins-Administratoren behalten ihren bestehenden Bypass für Lesen und Build.
+
+== Weiterführend
+
+* Wie diese YAML-Datei effektiv geparst, validiert und in Jobs umgesetzt wird, ist im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] beschrieben.
+* Wie Änderungen lokal in Jenkins getestet werden, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.

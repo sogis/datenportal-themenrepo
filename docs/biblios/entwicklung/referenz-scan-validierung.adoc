@@ -54,3 +54,8 @@ Diese Felder können in YAML vorkommen, werden von dieser Plugin-Version aber ni
 * `id` als Organisations-ID.
 
 Die Organisations-ID ergibt sich aus dem Ordnernamen.
+
+== Weiterführend
+
+* Die konkrete Scanner-Implementierung und das Fehlerverhalten sind im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] dokumentiert.
+* Die lokale Jenkins-Umgebung für Seed-Läufe und Integrationsprüfungen liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].

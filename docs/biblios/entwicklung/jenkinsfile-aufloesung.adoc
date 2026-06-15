@@ -60,3 +60,8 @@ Regeln:
 Für den Normalfall sollte `shared/Jenkinsfile` genügen. Organisationsspezifische Jenkinsfiles sollten nur verwendet werden, wenn eine Organisation tatsächlich abweichende Pipeline-Logik braucht.
 
 Je mehr Spezial-Jenkinsfiles vorhanden sind, desto schwieriger werden Wartung, Fehleranalyse und Plugin-Änderungen.
+
+== Weiterführend
+
+* Die konkrete Auflösungs- und Renderlogik liegt im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin].
+* Die lokale Jenkins-Umgebung, die diese Jenkinsfiles ausführt, liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].

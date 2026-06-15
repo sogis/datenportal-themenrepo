@@ -49,3 +49,8 @@ Der Vertrag ist deshalb bewusst streng:
 * Berechtigungen müssen explizit gesetzt sein.
 * GUI-Konfigurationen im Themenrepo werden zurückgewiesen.
 * Nach strukturellen Änderungen ist ein Seed-Lauf notwendig.
+
+== Weiterführend
+
+* Scanner-, Rechte- und Jobgenerator-Logik liegen im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin].
+* Lokaler Jenkins, Offline-Bundle und Docker-Tests liegen im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].

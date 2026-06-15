@@ -54,3 +54,8 @@ Nicht versioniert sind lokal erzeugte Jenkins-Jobs, Build-Historien und das loka
 Nach einer Änderung am Jenkins-Plugin reicht es nicht, die `.jpi` zu überschreiben. Jenkins muss neu gestartet werden, damit Klassen, Deskriptoren und Jelly-Views neu geladen werden.
 
 Danach ist ein Seed-Lauf notwendig, damit bestehende generierte Jobs neue Pipeline-Inhalte oder neue Generatorlogik übernehmen.
+
+== Weiterführend
+
+* Die technische Seed- und Jobgenerator-Logik liegt im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin].
+* Lokaler Jenkins-Start, Plugin-Installationsloop und Offline-Bundle-Bau liegen im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].

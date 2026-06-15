@@ -84,3 +84,8 @@ Nicht geeignet ist `dataset.gradle` für:
 == GRETL-Auflösung
 
 GRETL wird online über die zentralen Repository-Listen aufgelöst. Für SNAPSHOT-Versionen muss beim Bau des Offline-Bundles mit aktualisierten Abhängigkeiten gerechnet werden. Das Offline-Bundle wird nicht im Themenrepo erzeugt, sondern im Jenkins-/Image-Repo vorbereitet.
+
+== Weiterführend
+
+* Der Bau des Offline-Bundles ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.
+* Die Jenkins- und Seed-Logik, die später gegen diesen Vertrag läuft, ist im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] beschrieben.

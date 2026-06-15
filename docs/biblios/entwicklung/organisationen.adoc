@@ -84,3 +84,8 @@ Eine Organisation ist ungültig, wenn:
 * der Ordner offensichtlich Organisation-Inhalt enthält, aber unvollständig ist.
 
 Ungültige Organisationen werden beim Scan gemeldet und beim Seed-Lauf ignoriert.
+
+== Weiterführend
+
+* Die serverseitige Rechteprüfung und die effektive Nutzung dieser Felder sind im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] beschrieben.
+* Für lokale Seed-Läufe und End-to-End-Tests ist das Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] zuständig.

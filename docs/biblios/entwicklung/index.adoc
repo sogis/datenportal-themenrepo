@@ -39,3 +39,8 @@ Diese Themen gehören in die Bereiche «Daten anliefern», «Betrieb und Adminis
 Das Themenrepo ist keine lose Dateisammlung. Es ist ein maschinenlesbarer Vertrag. Das Jenkins-Plugin scannt das Repository, erkennt valide Organisationen und Datensätze, wendet Berechtigungen und Defaults an und materialisiert daraus Jenkins-Jobs.
 
 Eine Organisation ist ein Top-Level-Ordner mit gültiger `gretl-datenportal-job.yaml`. Ein Datensatz ist ein Unterordner einer Organisation mit genau einer `.xtf`- oder `.xml`-Datenblattdatei. Das Startformular ist fix und wird nicht mehr über YAML im Themenrepo konfiguriert.
+
+== Weiterführend
+
+* Wie diese Struktur gescannt und validiert wird, ist im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] beschrieben.
+* Wie das Themenrepo lokal in Jenkins und Offline-Tests eingebunden wird, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.

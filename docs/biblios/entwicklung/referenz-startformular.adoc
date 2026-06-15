@@ -45,3 +45,8 @@ Die generierten Jenkins-Jobs stellen folgende frühere Felder nicht mehr bereit:
 == Keine GUI-Konfiguration im Themenrepo
 
 Das Themenrepo kann keine zusätzlichen Formularfelder definieren. Abgelöste `gui`-Blöcke in `gretl-datenportal-job.yaml` oder `shared/gretl-datenportal-defaults.yaml` werden zurückgewiesen.
+
+== Weiterführend
+
+* Das effektive Startformular und seine serverseitige Validierung sind im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] dokumentiert.
+* Die lokale Jenkins-Oberfläche für manuelle Formular-Tests liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].

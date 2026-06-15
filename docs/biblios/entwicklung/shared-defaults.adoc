@@ -49,3 +49,8 @@ Wenn eine Organisation keine eigenen `notifications` definiert, deaktiviert sie 
 == Was nicht in Shared Defaults gehört
 
 Nicht mehr unterstützt sind `gui`-Blöcke. Das Startformular ist fix und wird nicht über Shared Defaults konfiguriert.
+
+== Weiterführend
+
+* Wie das Plugin Shared Defaults mit Organisationswerten zusammenführt, ist im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] dokumentiert.
+* Wie diese Defaults später lokal in Jenkins ausgeführt werden, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] dokumentiert.

@@ -67,9 +67,18 @@ Der Laufzeitvertrag sieht vereinfacht so aus:
 
 [source,bash]
 ----
-GRADLE_USER_HOME="/Users/stefan/sources/datenportal-jenkins-dev/build/offline-bundle/gradle-user-home" \
-DATENPORTAL_OFFLINE_JARS_DIR="/Users/stefan/sources/datenportal-jenkins-dev/build/offline-bundle/jars" \
+cd ../datenportal-jenkins-dev
+./bin/build-offline-bundle.sh
+
+cd ../datenportal-themenrepo
+GRADLE_USER_HOME="../datenportal-jenkins-dev/build/offline-bundle/gradle-user-home" \
+DATENPORTAL_OFFLINE_JARS_DIR="../datenportal-jenkins-dev/build/offline-bundle/jars" \
 ./gradlew --offline -I "$PWD/shared/gradle/init.gradle" -p afu tasks
 ----
 
 Für harte Airgap-Tests genügt `--offline` allein nicht. Zusätzlich muss der Container oder Prozess ohne Netzwerkzugang laufen.
+
+== Weiterführend
+
+* Der Bau des Offline-Bundles und die lokale Jenkins-Laufzeit liegen im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].
+* Die Job- und Pipeline-Logik, die später gegen dieses Bundle läuft, liegt im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin].
