@@ -37,6 +37,11 @@ Der aktuelle Vertrag ist bewusst streng:
 
 ## Zentrale Workflows
 
+Der lokale Jenkins erzeugt den Seed-Job nicht mehr ueber JCasC. Stattdessen
+provisioniert das Plugin den Job `gretl-datenportal-seed` automatisch.
+Themenrepo-Aenderungen werden nach dem naechsten Seed-Lauf in Jenkins-Jobs
+materialisiert.
+
 ### Neue Organisation anlegen
 
 Die Struktur, Pflichtfelder und ein minimales Beispiel sind in der Langform-Doku

@@ -22,11 +22,15 @@ Ein Seed-Lauf ist nötig nach Änderungen an:
 
 == Lokaler Bootstrap
 
-Nach einem frischen lokalen Checkout ist zunächst nur der per JCasC erzeugte Seed-Job vorhanden. Die generierten Organisation-Jobs entstehen erst nach dem Seed-Lauf.
+Nach einem frischen lokalen Checkout provisioniert das Jenkins-Plugin den Seed-Job `gretl-datenportal-seed` nach dem Start automatisch. Er wird nicht mehr per JCasC erzeugt und ueber die globale Plugin-Konfiguration gesteuert.
+
+In der lokalen Dev-Umgebung kommt die Repo-URL aus `datenportal-jenkins-dev/casc/jenkins.yaml` beziehungsweise den Env-Variablen `THEMEN_REPO_URL` und `THEMEN_REPO_BRANCH`.
+
+Der Seed-Job laeuft periodisch per Cron (`H/15 * * * *`) und kann fuer Tests jederzeit manuell gestartet werden. Die generierten Organisation-Jobs entstehen erst nach dem Seed-Lauf.
 
 [source,text]
 ----
-gretl-datenportal-plugin-generator-local
+gretl-datenportal-seed
 ----
 
 Nach einem erfolgreichen Lauf sollten die erwarteten Organisationsjobs vorhanden sein, zum Beispiel:
