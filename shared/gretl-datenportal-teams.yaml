@@ -1,0 +1,18 @@
+teams:
+  gretl-datenportal-seed-operators:
+    users:
+      - seed-user
+
+  datenportal-read:
+    users:
+      - read-user
+      - afu-user
+      - statistikdienst-user
+
+  afu-build:
+    users:
+      - afu-user
+
+  statistikdienst-build:
+    users:
+      - statistikdienst-user

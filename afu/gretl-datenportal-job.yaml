@@ -3,9 +3,9 @@ description: Publiziert AFU-Datensätze ins lokale Datenportal-Demo-Setup.
 
 permissions:
   read:
-    - GA_Gretl_Datenportal_Read
+    - team: datenportal-read
   build:
-    - GA_Gretl_Datenportal_AFU
+    - team: afu-build
 
 notifications:
   email:

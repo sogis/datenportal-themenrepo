@@ -45,12 +45,40 @@ Ein organisationsspezifisches `Jenkinsfile` ist optional. Es überschreibt das g
 ----
 permissions:
   read:
-    - GA_Gretl_Datenportal_Read
+    - team: datenportal-read
   build:
-    - GA_Gretl_Datenportal_AFU
+    - team: afu-build
 ----
 
-`permissions.read` und `permissions.build` sind Pflichtfelder. Beide Listen müssen mindestens eine Gruppe enthalten. Fehlende oder leere Berechtigungen machen die Organisation ungültig.
+`permissions.read` und `permissions.build` sind Pflichtfelder. Beide Listen müssen mindestens eine Team-Referenz enthalten. Jede referenzierte Team-ID muss in `shared/gretl-datenportal-teams.yaml` definiert sein. Unbekannte oder leere Teams machen die Organisation ungültig.
+
+== Teams
+
+Die Benutzerzuordnung wird zentral in `shared/gretl-datenportal-teams.yaml`
+verwaltet. Eine Team-ID wird dort genau einmal definiert und kann von mehreren
+Organisationsdateien verwendet werden:
+
+[source,yaml]
+----
+teams:
+  datenportal-read:
+    users:
+      - read-user
+  afu-build:
+    users:
+      - afu-user
+----
+
+Die Benutzer-IDs müssen den IDs der konfigurierten Jenkins-
+Authentisierungsquelle entsprechen. Das Seeder-Team wird nicht in einer
+Organisationsdatei referenziert; es wird global über
+`seedJobOperatorsTeam` in Jenkins konfiguriert.
+
+Im lokalen Entwicklungsstack stammen diese IDs aus dem JCasC-Local-
+Security-Realm des Repositories `datenportal-jenkins-dev`; deshalb kann dort
+ohne AD/LDAP getestet werden. In produktiven Umgebungen müssen dieselben
+Teamdatei-IDs den Benutzer-IDs der konfigurierten AD-/LDAP-/Entra-
+Authentisierungsquelle entsprechen.
 
 == Optionale Metadaten
 

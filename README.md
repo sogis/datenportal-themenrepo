@@ -13,6 +13,7 @@ Hierher gehoeren:
 - Organisationen und Datensaetze
 - `gretl-datenportal-job.yaml`
 - `shared/gretl-datenportal-defaults.yaml`
+- `shared/gretl-datenportal-teams.yaml`
 - `shared/Jenkinsfile`
 - `shared/gradle/gradle-build.properties`
 - gemeinsame Gradle-Initialisierung fuer GRETL und Offline-Aufloesung
@@ -32,6 +33,8 @@ Der aktuelle Vertrag ist bewusst streng:
 - `gui`-Bloecke und `dataset-gui.yaml` werden nicht mehr unterstuetzt.
 - Eine Organisation braucht eine gueltige `gretl-datenportal-job.yaml`.
 - Ein Datensatz ist ein Unterordner mit genau einer `.xtf`- oder `.xml`-Datei.
+- `permissions.read` und `permissions.build` referenzieren Teams aus
+  `shared/gretl-datenportal-teams.yaml`.
 - `shared/gradle/gradle-build.properties` bleibt die Source of Truth fuer
   Plugin-Versionen, Repository-URLs und Offline-Seed-Koordinaten.
 
@@ -41,6 +44,16 @@ Der lokale Jenkins erzeugt den Seed-Job nicht mehr ueber JCasC. Stattdessen
 provisioniert das Plugin den Job `gretl-datenportal-seed` automatisch.
 Themenrepo-Aenderungen werden nach dem naechsten Seed-Lauf in Jenkins-Jobs
 materialisiert.
+
+Der lokale Jenkins verwendet fuer die Authentisierung einen JCasC-Local-
+Security-Realm; eine AD-/LDAP-Umgebung ist fuer lokale Tests nicht notwendig.
+Der Seed-Lauf verarbeitet nur den committed Stand des konfigurierten
+Git-Branches. Uncommitted Aenderungen werden nicht uebernommen. Der lokale
+Workflow lautet daher: Themenrepo-Aenderungen committen, Seed-Job starten und
+anschliessend die materialisierten Jenkins-Jobs pruefen. Die lokalen Konten
+und der Bootstrap-Ablauf sind im Schwester-Repository
+[datenportal-jenkins-dev](https://codeberg.org/edigonzales/datenportal-jenkins-dev)
+dokumentiert.
 
 ### Neue Organisation anlegen
 

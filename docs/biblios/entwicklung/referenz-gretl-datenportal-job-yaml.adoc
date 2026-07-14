@@ -15,9 +15,9 @@ toc::[]
 ----
 permissions:
   read:
-    - GA_Gretl_Datenportal_Read
+    - team: datenportal-read
   build:
-    - GA_Gretl_Datenportal_AFU
+    - team: afu-build
 ----
 
 == Felder
@@ -38,12 +38,12 @@ permissions:
 
 | `permissions.read`
 | Ja
-| Muss mindestens eine Gruppe enthalten.
+| Muss mindestens eine Team-Referenz enthalten; das Team muss in `shared/gretl-datenportal-teams.yaml` definiert sein.
 | Ja
 
 | `permissions.build`
 | Ja
-| Muss mindestens eine Gruppe enthalten.
+| Muss mindestens eine Team-Referenz enthalten; das Team muss in `shared/gretl-datenportal-teams.yaml` definiert sein.
 | Ja
 
 | `execution.jobName`
@@ -87,6 +87,7 @@ permissions:
 * Der Ordnername ist die kanonische Organisations-ID.
 * Ein YAML-Feld `id` ist für Organisation-Jobs nicht massgebend.
 * `permissions.read` und `permissions.build` müssen gesetzt und nicht leer sein.
+* Jede Berechtigung referenziert genau ein bestehendes Team mit `team: <team-id>`.
 * `execution.*` in der Organisation überschreibt Shared Defaults.
 * Fehlende `notifications` deaktivieren Shared Notifications nicht.
 * `gui`-Blöcke sind nicht erlaubt.

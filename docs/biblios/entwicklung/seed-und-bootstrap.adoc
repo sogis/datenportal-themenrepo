@@ -16,6 +16,7 @@ Ein Seed-Lauf ist nötig nach Änderungen an:
 * Organisationen oder Datensätzen;
 * `gretl-datenportal-job.yaml`;
 * `shared/gretl-datenportal-defaults.yaml`;
+* `shared/gretl-datenportal-teams.yaml`;
 * `shared/Jenkinsfile`;
 * Gradle-Build-Logik, wenn sich dadurch die generierten Jobs oder ihr Verhalten ändern;
 * dem Jenkins-Plugin, wenn sich Scanner-, Validierungs- oder Jobgenerator-Logik geändert hat.
@@ -26,19 +27,37 @@ Nach einem frischen lokalen Checkout provisioniert das Jenkins-Plugin den Seed-J
 
 In der lokalen Dev-Umgebung kommt die Repo-URL aus `datenportal-jenkins-dev/casc/jenkins.yaml` beziehungsweise den Env-Variablen `THEMEN_REPO_URL` und `THEMEN_REPO_BRANCH`.
 
+Für lokale Tests verwendet `datenportal-jenkins-dev` den JCasC-Local-
+Security-Realm. Eine AD-/LDAP-Umgebung ist dafür nicht erforderlich. In einer
+produktiven Umgebung liefert dagegen die konfigurierte
+AD-/LDAP-/Entra-Authentisierung die Jenkins-Benutzer-IDs, die in
+`shared/gretl-datenportal-teams.yaml` referenziert werden.
+
 Der Seed-Job laeuft periodisch per Cron (`H/15 * * * *`) und kann fuer Tests jederzeit manuell gestartet werden. Die generierten Organisation-Jobs entstehen erst nach dem Seed-Lauf.
+
+Der Seed-Lauf checkt den committed Stand des konfigurierten Git-Branches aus.
+Nicht commitete Änderungen im Arbeitsverzeichnis des Themenrepos werden nicht
+verarbeitet. Der lokale Ablauf ist deshalb: Änderungen committen, den Jenkins
+Seed-Job starten und anschliessend die erzeugten Jobs prüfen. Nach einem
+frischen lokalen Start führt `admin` den ersten Seed-Lauf aus; danach kann das
+Mitglied des konfigurierten Seeder-Teams `seed-user` den Seeder starten.
 
 [source,text]
 ----
 gretl-datenportal-seed
 ----
 
-Nach einem erfolgreichen Lauf sollten die erwarteten Organisationsjobs vorhanden sein, zum Beispiel:
+Nach einem erfolgreichen Lauf werden die gültigen Organisationen als Jobs
+materialisiert. Im aktuellen lokalen Fixture wird `gretl-datenportal-afu`
+erzeugt. Der Statistikdienst ist derzeit vorbereitet, wird aber nicht erzeugt,
+weil die Datei `statistikdienst/XXXXXgretl-datenportal-job.yaml` wegen des
+`XXXXX`-Markers nicht als `gretl-datenportal-job.yaml` erkannt wird. Die
+Aktivierung dieses Fixtures ist nicht Teil der lokalen Authentisierungs- und
+Seed-Workflow-Dokumentation.
 
 [source,text]
 ----
 gretl-datenportal-afu
-gretl-datenportal-statistikdienst
 ----
 
 == Was versioniert ist

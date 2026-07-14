@@ -13,9 +13,9 @@ datasets:
 
 permissions:
   read:
-    - GA_Gretl_Datenportal_Read
+    - team: datenportal-read
   build:
-    - GA_Gretl_Datenportal_Statistikdienst
+    - team: statistikdienst-build
 
 execution:
   type: jenkinsPipeline
