@@ -11,6 +11,12 @@ Das Offline-Bundle wird nicht im Themenrepo gebaut. Zuständig ist das Repositor
 
 Das Themenrepo muss aber so aufgebaut sein, dass der vorbereitete Offline-Vertrag funktioniert.
 
+Beim Bundle- oder Image-Bau ist dieses Repository die Build-Quelle. Zur
+Jenkins-Laufzeit wird die Repository-Quelle separat konfiguriert: produktiv als
+committed `THEMEN_REPO_URL`/`THEMEN_REPO_BRANCH`, lokal optional als
+`THEMEN_REPO_PATH` im `working-tree`-Modus. Das ändert den fachlichen Vertrag
+nicht und verschiebt keine Jenkins- oder Docker-Konfiguration hierher.
+
 == Bestandteile des Offline-Bundles
 
 Das Offline-Bundle besteht aus zwei Teilen:

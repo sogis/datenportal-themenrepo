@@ -25,7 +25,10 @@ Ein Seed-Lauf ist nötig nach Änderungen an:
 
 Nach einem frischen lokalen Checkout provisioniert das Jenkins-Plugin den Seed-Job `gretl-datenportal-seed` nach dem Start automatisch. Er wird nicht mehr per JCasC erzeugt und ueber die globale Plugin-Konfiguration gesteuert.
 
-In der lokalen Dev-Umgebung kommt die Repo-URL aus `datenportal-jenkins-dev/casc/jenkins.yaml` beziehungsweise den Env-Variablen `THEMEN_REPO_URL` und `THEMEN_REPO_BRANCH`.
+In der lokalen Dev-Umgebung kommen Repository-Quelle und Modus aus
+`datenportal-jenkins-dev/casc/jenkins.yaml` beziehungsweise den Env-Variablen
+`THEMEN_REPO_MODE`, `THEMEN_REPO_URL`, `THEMEN_REPO_PATH` und
+`THEMEN_REPO_BRANCH`.
 
 Für lokale Tests verwendet `datenportal-jenkins-dev` den JCasC-Local-
 Security-Realm. Eine AD-/LDAP-Umgebung ist dafür nicht erforderlich. In einer
@@ -35,12 +38,15 @@ AD-/LDAP-/Entra-Authentisierung die Jenkins-Benutzer-IDs, die in
 
 Der Seed-Job laeuft periodisch per Cron (`H/15 * * * *`) und kann fuer Tests jederzeit manuell gestartet werden. Die generierten Organisation-Jobs entstehen erst nach dem Seed-Lauf.
 
-Der Seed-Lauf checkt den committed Stand des konfigurierten Git-Branches aus.
-Nicht commitete Änderungen im Arbeitsverzeichnis des Themenrepos werden nicht
-verarbeitet. Der lokale Ablauf ist deshalb: Änderungen committen, den Jenkins
-Seed-Job starten und anschliessend die erzeugten Jobs prüfen. Nach einem
-frischen lokalen Start führt `admin` den ersten Seed-Lauf aus; danach kann das
-Mitglied des konfigurierten Seeder-Teams `seed-user` den Seeder starten.
+Im produktionsnahen Modus `managed-git` checkt der Seed-Lauf den committed Stand
+des konfigurierten Git-Branches aus. Der lokale Modus `working-tree` kopiert
+dagegen beim Seed-Lauf den externen Arbeitsbaum inklusive uncommitteter und
+untracked Dateien in einen Jenkins-internen Snapshot. Das externe Themenrepo
+wird nicht verändert; der Snapshot bleibt bis zum nächsten Seed-Lauf bestehen.
+Damit ist klar, ob eine Änderung fachlich versioniert oder nur lokal getestet
+wird. Nach einem frischen lokalen Start führt `admin` den ersten Seed-Lauf aus;
+danach kann das Mitglied des konfigurierten Seeder-Teams `seed-user` den Seeder
+starten.
 
 [source,text]
 ----

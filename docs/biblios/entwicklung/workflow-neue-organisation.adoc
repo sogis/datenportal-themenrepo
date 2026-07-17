@@ -17,8 +17,13 @@ Eine neue Organisation soll im Themenrepo so angelegt werden, dass das Jenkins-P
 . `gretl-datenportal-job.yaml` erstellen.
 . `build.gradle` erstellen.
 . Mindestens einen Datensatzordner mit genau einer `.xtf`- oder `.xml`-Datenblattdatei anlegen.
-. Änderungen committen.
+. Änderungen committen und auf dem produktiv verwendeten Branch bereitstellen.
 . Seed-Job in Jenkins ausführen.
+
+Für einen lokalen Plugin-Test kann derselbe Ablauf im technischen
+`working-tree`-Modus ohne Commit geprüft werden. Der lokale Snapshot wird erst
+beim Seed-Lauf erzeugt; für Produktion bleibt der committed Git-Workflow
+verbindlich.
 
 == Beispielstruktur
 

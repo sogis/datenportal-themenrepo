@@ -7,6 +7,12 @@ include::_partials/aktueller-vertrag.adoc[]
 
 Das Themenrepo ist der fachliche Vertrag zwischen Datenportal, Jenkins-Plugin und GRETL-Builds. Es beschreibt, welche Organisationen am Datenportal teilnehmen, welche Datensätze publiziert werden können und mit welchen Defaults die generierten Jenkins-Jobs ausgeführt werden.
 
+Der Vertrag ist unabhängig vom Ausführungsmodus: Im produktiven Workflow wird
+ein committed Git-Stand verarbeitet. Die lokale Jenkins-Entwicklungsumgebung
+kann zusätzlich einen `working-tree`-Snapshot mit uncommitteten Änderungen
+verwenden. Dieser technische Modus ändert weder den Vertrag noch die Inhalte
+des Themenrepos.
+
 Diese Doku richtet sich an Entwicklerinnen, Entwickler und technische Maintainer. Sie erklärt nicht primär, wie Datenlieferanten eine Datei hochladen, sondern wie das Repository aufgebaut sein muss, damit das Jenkins-Plugin daraus valide Jobs, Startformulare und Ausführungslogik erzeugen kann.
 
 toc::[]

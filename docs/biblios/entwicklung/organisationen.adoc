@@ -80,6 +80,11 @@ ohne AD/LDAP getestet werden. In produktiven Umgebungen müssen dieselben
 Teamdatei-IDs den Benutzer-IDs der konfigurierten AD-/LDAP-/Entra-
 Authentisierungsquelle entsprechen.
 
+Produktive Änderungen an Organisationen und Teams werden committed und über
+den konfigurierten Git-Branch geseedet. Für lokale Plugin-Entwicklung darf die
+technische Dev-Umgebung alternativ ihren `working-tree`-Snapshot verwenden;
+die YAML- und Verzeichnisregeln dieses Vertrags bleiben identisch.
+
 == Optionale Metadaten
 
 [source,yaml]

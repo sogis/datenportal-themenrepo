@@ -16,8 +16,12 @@ Ein neuer Datensatz soll einer bestehenden Organisation hinzugefügt werden.
 . Datensatzordner unter der Organisation anlegen.
 . Genau eine `.xtf`- oder `.xml`-Datenblattdatei in den Ordner legen.
 . Optional `dataset.gradle` ergänzen.
-. Änderungen committen.
+. Änderungen committen und auf dem produktiv verwendeten Branch bereitstellen.
 . Seed-Job erneut ausführen.
+
+Für lokale Plugin-Entwicklung kann die Änderung im `working-tree`-Modus vor dem
+Commit getestet werden. Das ist ein technischer Snapshot der Dev-Umgebung und
+ändert nicht die fachliche Versionierungsregel für den produktiven Ablauf.
 
 == Beispiel
 
