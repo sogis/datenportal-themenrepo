@@ -86,5 +86,5 @@ Danach ist ein Seed-Lauf notwendig, damit bestehende generierte Jobs neue Pipeli
 
 == Weiterführend
 
-* Die technische Seed- und Jobgenerator-Logik liegt im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin].
+* Die technische Seed- und Jobgenerator-Logik liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin].
 * Lokaler Jenkins-Start, Plugin-Installationsloop und Offline-Bundle-Bau liegen im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].

@@ -7,6 +7,6 @@ Die Dokumentation wurde aus den README-Dateien der technischen Repositories neu 
 
 * `datenportal-themenrepo`
 * `datenportal-jenkins-dev`
-* `jenkins-gretl-datenportal-plugin`
+* `datenportal-jenkins-gretl-plugin`
 
 Bei Widersprüchen wurde für den «Themenrepo-Vertrag» die aktuelle Plugin-Implementierung als massgebend behandelt.

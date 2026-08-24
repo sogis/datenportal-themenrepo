@@ -95,5 +95,5 @@ permissions:
 
 == Weiterführend
 
-* Wie diese YAML-Datei effektiv geparst, validiert und in Jobs umgesetzt wird, ist im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] beschrieben.
+* Wie diese YAML-Datei effektiv geparst, validiert und in Jobs umgesetzt wird, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] beschrieben.
 * Wie Änderungen lokal in Jenkins getestet werden, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.

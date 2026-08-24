@@ -21,7 +21,7 @@ Hierher gehoeren:
 Nicht hierher gehoeren:
 
 - Scanner-, UI- und Seed-Logik des Plugins:
-  [jenkins-gretl-datenportal-plugin](https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin)
+  [datenportal-jenkins-gretl-plugin](https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin)
 - lokaler Jenkins, JCasC, Offline-Bundle-Bau und Docker-Image:
   [datenportal-jenkins-dev](https://codeberg.org/edigonzales/datenportal-jenkins-dev)
 
@@ -102,7 +102,7 @@ Empfohlene Einstiege:
 
 ## Schwester-Repositories
 
-- [jenkins-gretl-datenportal-plugin](https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin)
+- [datenportal-jenkins-gretl-plugin](https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin)
   ist die kanonische Doku fuer Scanner, Startformular, Berechtigungen,
   Seed-Builder und Pipeline-Rendering.
 - [datenportal-jenkins-dev](https://codeberg.org/edigonzales/datenportal-jenkins-dev)

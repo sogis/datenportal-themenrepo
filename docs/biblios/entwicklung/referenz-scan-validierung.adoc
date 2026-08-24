@@ -57,5 +57,5 @@ Die Organisations-ID ergibt sich aus dem Ordnernamen.
 
 == Weiterführend
 
-* Die konkrete Scanner-Implementierung und das Fehlerverhalten sind im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] dokumentiert.
+* Die konkrete Scanner-Implementierung und das Fehlerverhalten sind im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] dokumentiert.
 * Die lokale Jenkins-Umgebung für Seed-Läufe und Integrationsprüfungen liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].

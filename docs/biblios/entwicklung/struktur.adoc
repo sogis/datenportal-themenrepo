@@ -108,5 +108,5 @@ Folgende Elemente gehören nicht zum Themenrepo-Vertrag:
 
 == Weiterführend
 
-* Wie das Plugin diese Struktur scannt und welche Fehlermeldungen daraus entstehen, ist im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] dokumentiert.
+* Wie das Plugin diese Struktur scannt und welche Fehlermeldungen daraus entstehen, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] dokumentiert.
 * Wie diese Struktur lokal in Jenkins ausgecheckt und getestet wird, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] dokumentiert.

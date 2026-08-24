@@ -87,4 +87,4 @@ Für harte Airgap-Tests genügt `--offline` allein nicht. Zusätzlich muss der C
 == Weiterführend
 
 * Der Bau des Offline-Bundles und die lokale Jenkins-Laufzeit liegen im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].
-* Die Job- und Pipeline-Logik, die später gegen dieses Bundle läuft, liegt im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin].
+* Die Job- und Pipeline-Logik, die später gegen dieses Bundle läuft, liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin].

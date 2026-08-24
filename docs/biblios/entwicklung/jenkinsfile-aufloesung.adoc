@@ -63,5 +63,5 @@ Je mehr Spezial-Jenkinsfiles vorhanden sind, desto schwieriger werden Wartung, F
 
 == Weiterführend
 
-* Die konkrete Auflösungs- und Renderlogik liegt im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin].
+* Die konkrete Auflösungs- und Renderlogik liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin].
 * Die lokale Jenkins-Umgebung, die diese Jenkinsfiles ausführt, liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].

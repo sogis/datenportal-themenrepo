@@ -76,5 +76,5 @@ Ohne Seed-Lauf erscheint die Organisation nicht als generierter Jenkins-Job. Ohn
 
 == Weiterführend
 
-* Wie der Seed-Lauf diese neue Organisation scannt und materialisiert, ist im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] beschrieben.
+* Wie der Seed-Lauf diese neue Organisation scannt und materialisiert, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] beschrieben.
 * Wie lokaler Bootstrap und Jenkins-Restart für Tests funktionieren, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.

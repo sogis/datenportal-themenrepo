@@ -48,5 +48,5 @@ Das Themenrepo kann keine zusätzlichen Formularfelder definieren. Abgelöste `g
 
 == Weiterführend
 
-* Das effektive Startformular und seine serverseitige Validierung sind im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] dokumentiert.
+* Das effektive Startformular und seine serverseitige Validierung sind im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] dokumentiert.
 * Die lokale Jenkins-Oberfläche für manuelle Formular-Tests liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].

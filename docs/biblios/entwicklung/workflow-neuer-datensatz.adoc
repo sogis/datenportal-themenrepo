@@ -66,5 +66,5 @@ Wenn das Datenblatt eine `DatasetSeries` beschreibt, zeigt das fixe Startformula
 
 == Weiterführend
 
-* Wie der Datensatzscan und die Validierung technisch ablaufen, ist im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] beschrieben.
+* Wie der Datensatzscan und die Validierung technisch ablaufen, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] beschrieben.
 * Wie Datensätze lokal mit Jenkins und dem Offline-Bundle geprüft werden, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.

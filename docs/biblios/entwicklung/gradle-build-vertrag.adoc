@@ -88,4 +88,4 @@ GRETL wird online über die zentralen Repository-Listen aufgelöst. Für SNAPSHO
 == Weiterführend
 
 * Der Bau des Offline-Bundles ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.
-* Die Jenkins- und Seed-Logik, die später gegen diesen Vertrag läuft, ist im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] beschrieben.
+* Die Jenkins- und Seed-Logik, die später gegen diesen Vertrag läuft, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] beschrieben.

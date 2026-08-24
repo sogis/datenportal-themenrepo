@@ -48,5 +48,5 @@ Eine Organisation ist ein Top-Level-Ordner mit gültiger `gretl-datenportal-job.
 
 == Weiterführend
 
-* Wie diese Struktur gescannt und validiert wird, ist im Repository link:https://codeberg.org/edigonzales/jenkins-gretl-datenportal-plugin[jenkins-gretl-datenportal-plugin] beschrieben.
+* Wie diese Struktur gescannt und validiert wird, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] beschrieben.
 * Wie das Themenrepo lokal in Jenkins und Offline-Tests eingebunden wird, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.
