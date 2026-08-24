@@ -50,3 +50,33 @@ Eine Organisation ist ein Top-Level-Ordner mit gültiger `gretl-datenportal-job.
 
 * Wie diese Struktur gescannt und validiert wird, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] beschrieben.
 * Wie das Themenrepo lokal in Jenkins und Offline-Tests eingebunden wird, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.
+
+include::zweck.adoc[leveloffset=+1]
+
+include::struktur.adoc[leveloffset=+1]
+
+include::organisationen.adoc[leveloffset=+1]
+
+include::datensaetze.adoc[leveloffset=+1]
+
+include::shared-defaults.adoc[leveloffset=+1]
+
+include::jenkinsfile-aufloesung.adoc[leveloffset=+1]
+
+include::gradle-build-vertrag.adoc[leveloffset=+1]
+
+include::offline-und-java.adoc[leveloffset=+1]
+
+include::workflow-neue-organisation.adoc[leveloffset=+1]
+
+include::workflow-neuer-datensatz.adoc[leveloffset=+1]
+
+include::seed-und-bootstrap.adoc[leveloffset=+1]
+
+include::referenz-gretl-datenportal-job-yaml.adoc[leveloffset=+1]
+
+include::referenz-startformular.adoc[leveloffset=+1]
+
+include::referenz-scan-validierung.adoc[leveloffset=+1]
+
+include::quellen-notiz.adoc[leveloffset=+1]
