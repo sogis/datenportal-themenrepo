@@ -1,13 +1,39 @@
-= Jenkinsfile-Auflösung
+= Jenkinsfile und GRETL-Ausführung
 :page-layout: docs
 :toc: macro
 :toclevels: 2
 
-toc::[]
-
 == Zweck
 
-Das Themenrepo kann ein gemeinsames Jenkinsfile oder organisationsspezifische Jenkinsfiles bereitstellen. Das Jenkins-Plugin entscheidet beim Seed-Lauf, welches Jenkinsfile für den generierten Job verwendet wird.
+Das Themenrepo kann ein gemeinsames Jenkinsfile oder organisationsspezifische Jenkinsfiles bereitstellen. Das Jenkins-Plugin entscheidet beim Seed-Lauf, welches Jenkinsfile für den generierten Jenkins-Job verwendet wird, und setzt dessen Pipeline-Definition auf den aufgelösten Inhalt.
+
+Der Jenkins-Job ist technisch ein Jenkins-`WorkflowJob`. Seine Pipeline und damit der eigentliche GRETL-/Gradle-Aufruf sind im Jenkinsfile definiert. Das Plugin erzeugt und konfiguriert den Job; es führt den Gradle-Build nicht selbst aus.
+
+Im gemeinsamen Jenkinsfile ist dafür die Stage `Run GRETL Datenportal Job` verantwortlich. Sie startet den Java-17-Gradle-Wrapper, übergibt die Organisation, den Datensatz und weitere Startparameter und führt den konfigurierten Gradle-Task aus. `execution.gradleTask` bezeichnet somit den innerhalb der Pipeline auszuführenden Gradle-Task, nicht einen separaten Jenkins-Job.
+
+== Ablauf vom Seed-Lauf bis zum Gradle-Build
+
+[source,text]
+----
+Jenkins-Plugin
+  -> Jenkinsfile-Auflösung und gegebenenfalls Platzhalterersetzung
+  -> erzeugter Jenkins-WorkflowJob
+  -> Jenkins-Pipeline aus dem Jenkinsfile
+  -> shared/bin/gradlew-java17.sh
+  -> Gradle-Task im Build der Organisation
+----
+
+Beim Ausführen des gemeinsamen Jenkinsfiles wird der Gradle-Wrapper unter anderem mit folgenden Argumenten gestartet:
+
+[source,text]
+----
+./shared/bin/gradlew-java17.sh --offline --no-daemon \
+  -I shared/gradle/init.gradle \
+  -p <organisation> <gradleTask> \
+  -Pdataset=<dataset>
+----
+
+Je nach Ausführung kommen Uploads für Metadaten und Daten, ein Kommentar sowie eine `SERIES_ID` hinzu. Der anschliessende Gradle-Build bindet die gemeinsame Build-Logik und die organisationsspezifische Build-Datei ein. Ein ausgewählter Datensatz kann zusätzlich seine optionale `dataset.gradle` laden. Die Einzelheiten dieses Builds sind im <<gradle-build-vertrag,Gradle-Build-Vertrag>> beschrieben.
 
 == Auflösungsreihenfolge
 
@@ -21,11 +47,15 @@ execution.jenkinsfile aus <organisation>/gretl-datenportal-job.yaml
 -> shared/Jenkinsfile
 ----
 
-Der erste vorhandene und gültige Pfad gewinnt.
+Die ersten drei Einträge sind nur relevant, wenn der jeweilige Pfad konfiguriert ist. Der erste nicht konfigurierte Eintrag wird übersprungen. Ist ein explizit konfigurierter Pfad nicht vorhanden, absolut oder ausserhalb seines zulässigen Basisordners, bricht der Seed-Lauf mit einem Fehler ab; es wird nicht stillschweigend auf den nächsten Eintrag zurückgefallen.
+
+Wird kein Jenkinsfile explizit konfiguriert und existiert kein organisationsspezifisches `Jenkinsfile`, wird `shared/Jenkinsfile` als repo-weites Default verwendet.
 
 == Gemeinsames `shared/Jenkinsfile`
 
 `shared/Jenkinsfile` ist das kanonische repo-weite Default-Pipeline-Skript. Es muss vorhanden sein, wenn keine spezifischere Jenkinsfile-Konfiguration greift.
+
+Das gemeinsame Jenkinsfile enthält die gemeinsame Pipeline-Logik. Dazu gehören unter anderem die Validierung der Startparameter, die Annahme der Datei-Uploads, der Aufruf des Java-17-Gradle-Wrappers und die Archivierung der Build-Reports. Der eigentliche Task wird über `@@GRADLE_TASK@@` eingesetzt.
 
 Das gemeinsame Jenkinsfile darf folgende Platzhalter verwenden:
 
@@ -55,13 +85,28 @@ Regeln:
 * Explizit konfigurierte `execution.jenkinsfile`-Pfade werden wörtlich geladen.
 * Unbekannte Marker bleiben unverändert.
 
+Beim impliziten `shared/Jenkinsfile` wird `@@GRADLE_TASK@@` durch den effektiven Wert von `execution.gradleTask` ersetzt. Dabei gilt die Konfigurationsreihenfolge Organisation, Shared Defaults und schliesslich der Plugin-Fallback `publishToDatenportal`.
+
+Ein organisationsspezifisches oder explizit konfiguriertes Jenkinsfile kann den Gradle-Task direkt im Pipeline-Skript festlegen. In diesem Fall verändert `execution.gradleTask` den Jenkinsfile-Inhalt nicht automatisch. Beispielsweise enthält `statistikdienst/Jenkinsfile` den festen Aufruf `publishToDatenportal`.
+
+== Verantwortungsabgrenzung
+
+[cols="1,3",options="header"]
+|===
+| Bestandteil | Verantwortung
+
+| Jenkins-Plugin
+| Scannt und validiert das Themenrepo, führt Konfigurationen zusammen, erzeugt den Jenkins-`WorkflowJob` und löst das Jenkinsfile auf. Beim impliziten `shared/Jenkinsfile` ersetzt es die bekannten Platzhalter.
+
+| Jenkinsfile
+| Definiert die Jenkins-Pipeline und startet innerhalb einer Stage den GRETL-/Gradle-Lauf mit dem Java-17-Wrapper und den Jobparametern.
+
+| Gradle-Build
+| Führt die Build- und Publikationslogik aus. Dazu gehören `shared/gradle/init.gradle`, `shared/gradle/organisation-common.gradle`, `<organisation>/build.gradle` und optional `<organisation>/<dataset>/dataset.gradle`.
+|===
+
 == Empfehlung
 
 Für den Normalfall sollte `shared/Jenkinsfile` genügen. Organisationsspezifische Jenkinsfiles sollten nur verwendet werden, wenn eine Organisation tatsächlich abweichende Pipeline-Logik braucht.
 
 Je mehr Spezial-Jenkinsfiles vorhanden sind, desto schwieriger werden Wartung, Fehleranalyse und Plugin-Änderungen.
-
-== Weiterführend
-
-* Die konkrete Auflösungs- und Renderlogik liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin].
-* Die lokale Jenkins-Umgebung, die diese Jenkinsfiles ausführt, liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].

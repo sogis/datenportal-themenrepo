@@ -1,3 +1,4 @@
+[[gradle-build-vertrag]]
 = Gradle-Build-Vertrag
 :page-layout: docs
 :toc: macro
