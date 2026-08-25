@@ -1,4 +1,4 @@
-= Referenz: gretl-datenportal-job.yaml
+= gretl-datenportal-job.yaml
 :page-layout: docs
 :toc: macro
 :toclevels: 2

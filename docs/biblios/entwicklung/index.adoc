@@ -1,7 +1,9 @@
 = Themenrepo
 :page-layout: docs
 :toc: macro
-:toclevels: 2
+:toclevels: 3
+
+== Einleitung
 
 Das Themenrepo ist der fachliche Vertrag zwischen Datenportal, Jenkins-Plugin und GRETL-Builds. Es beschreibt, welche Organisationen am Datenportal teilnehmen, welche Datensätze publiziert werden können und mit welchen Defaults die generierten Jenkins-Jobs ausgeführt werden. Gleichzeitig werden im Themenrepo auch die Metadaten zu einem Datenthema verwaltet.
 
@@ -9,7 +11,7 @@ Der Vertrag ist unabhängig vom Ausführungsmodus: Im produktiven Workflow wird 
 
 Diese Doku richtet sich an Themenintegratoren und Entwickler. Sie erklärt nicht primär, wie Datenlieferanten eine Datei hochladen, sondern wie das Repository aufgebaut sein muss, damit das Jenkins-Plugin daraus valide Jobs, Startformulare und Ausführungslogik erzeugen kann.
 
-== Was gehört in diese Dokumentation?
+=== Was gehört in diese Dokumentation?
 
 Diese Dokumentation beschreibt:
 
@@ -21,7 +23,7 @@ Diese Dokumentation beschreibt:
 * Maintainer-Workflows für neue Organisationen, neue Datensätze und Seed-Läufe.
 * das Zusammenspiel mit Offline-Bundle, Java 17 und Java 21;
 
-== Was gehört nicht in diese Dokumentation?
+=== Was gehört nicht in diese Dokumentation?
 
 Nicht behandelt werden hier:
 
@@ -41,30 +43,44 @@ Eine Organisation ist ein Top-Level-Ordner mit gültiger `gretl-datenportal-job.
 * Wie diese Struktur gescannt und validiert wird, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] beschrieben.
 * Wie das Themenrepo lokal in Jenkins und Offline-Tests eingebunden wird, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.
 
-include::zweck.adoc[leveloffset=+1]
+== Kurzer Wegweiser
 
-include::struktur.adoc[leveloffset=+1]
+* Ein neues Thema integrieren: mit dem xref:_lokaler_ablauf_zum_integrieren_und_testen[lokalen Ablauf] beginnen und danach die Arbeitsabläufe für eine xref:_neue_organisation_anlegen[neue Organisation] oder einen xref:_neuen_datensatz_anlegen[neuen Datensatz] lesen.
+* Den Aufbau des Themenrepos verstehen: mit xref:_zweck_des_themenrepos[Zweck des Themenrepos] und xref:_erwartete_repository_struktur[der erwarteten Repository-Struktur] beginnen.
+* Technische Details nachschlagen: die Kapitel unter xref:_gretl_datenportal_job_yaml[Referenz] verwenden.
 
-include::organisationen.adoc[leveloffset=+1]
+== Einstieg
 
-include::datensaetze.adoc[leveloffset=+1]
+include::zweck.adoc[leveloffset=+2]
 
-include::shared-defaults.adoc[leveloffset=+1]
+include::struktur.adoc[leveloffset=+2]
 
-include::jenkinsfile-aufloesung.adoc[leveloffset=+1]
+include::lokaler-ablauf-integrieren-und-testen.adoc[leveloffset=+2]
 
-include::gradle-build-vertrag.adoc[leveloffset=+1]
+== Arbeitsabläufe
 
-include::offline-und-java.adoc[leveloffset=+1]
+include::workflow-neue-organisation.adoc[leveloffset=+2]
 
-include::workflow-neue-organisation.adoc[leveloffset=+1]
+include::workflow-neuer-datensatz.adoc[leveloffset=+2]
 
-include::workflow-neuer-datensatz.adoc[leveloffset=+1]
+include::seed-und-bootstrap.adoc[leveloffset=+2]
 
-include::seed-und-bootstrap.adoc[leveloffset=+1]
+== Referenz
 
-include::referenz-gretl-datenportal-job-yaml.adoc[leveloffset=+1]
+include::organisationen.adoc[leveloffset=+2]
 
-include::referenz-startformular.adoc[leveloffset=+1]
+include::datensaetze.adoc[leveloffset=+2]
 
-include::referenz-scan-validierung.adoc[leveloffset=+1]
+include::shared-defaults.adoc[leveloffset=+2]
+
+include::jenkinsfile-aufloesung.adoc[leveloffset=+2]
+
+include::gradle-build-vertrag.adoc[leveloffset=+2]
+
+include::offline-und-java.adoc[leveloffset=+2]
+
+include::gretl-datenportal-job-yaml.adoc[leveloffset=+2]
+
+include::startformular.adoc[leveloffset=+2]
+
+include::scan-validierung.adoc[leveloffset=+2]

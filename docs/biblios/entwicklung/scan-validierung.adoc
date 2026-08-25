@@ -1,4 +1,4 @@
-= Referenz: Scan- und Validierungsregeln
+= Scan- und Validierungsregeln
 :page-layout: docs
 :toc: macro
 :toclevels: 2
