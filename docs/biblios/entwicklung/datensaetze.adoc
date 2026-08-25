@@ -5,7 +5,7 @@
 
 == Erkennung
 
-Ein Datensatz ist ein Unterordner einer Organisation mit genau einer Datenblattdatei. Die Datenblattdatei muss die Endung `.xtf` oder `.xml` haben. Der Dateiname der Datenblattdatei ist frei wählbar. Entscheidend ist, dass genau eine `.xtf`- oder `.xml`-Datei vorhanden ist und deren `identifier` (XML-Attribut) dem Namen des Datensatzordners entspricht.
+Ein Datensatz ist ein Unterordner einer Organisation mit genau einer Datenblattdatei. Die Datenblattdatei muss die Endung `.xtf` oder `.xml` haben. Der Dateiname der Datenblattdatei ist frei wählbar. Entscheidend ist, dass genau eine `.xtf`- oder `.xml`-Datei vorhanden ist und deren Element `identifier` dem Namen des Datensatzordners entspricht.
 
 [source,text]
 ----
@@ -23,7 +23,7 @@ statistikdienst/
     datenblatt.xml
 ----
 
-Der Scanner erwartet pro Datensatzordner genau eine solche Metadatendatei. Mehrdeutige oder fehlende Metadatendateien sind Validierungsfehler.
+Der Jenkins-Plugin-Scanner und die gemeinsame Gradle-Logik erwarten pro Datensatzordner genau eine solche Metadatendatei. Mehrdeutige, fehlende oder inhaltlich nicht zum Ordner passende Metadatendateien sind Validierungsfehler.
 
 == Datensatzserie
 
@@ -41,9 +41,21 @@ afu/
     dataset.gradle
 ----
 
-`dataset.gradle` ist ein Build-Override. Die Datei wird nur geladen, wenn der Datensatz zur Laufzeit ausgewählt wurde. Sie eignet sich für datensatzspezifische Zusatzlogik, zusätzliche Properties oder abweichende Build-Hinweise.
+`dataset.gradle` ist eine optionale datensatzspezifische Gradle-Erweiterung. Sie wird nicht vom Jenkins-Plugin geladen, sondern von `shared/gradle/organisation-common.gradle`, wenn der Datensatz über `-Pdataset` ausgewählt und erfolgreich aufgelöst wurde.
 
-`dataset.gradle` erzeugt keinen eigenen Jenkins-Job, ändert keine Startformular-Felder und ersetzt keine Organisationskonfiguration.
+Die Datei kann zum Beispiel datensatzspezifische Gradle-Tasks oder Build-Konfiguration registrieren. Für den gemeinsamen Kontext steht ein Override-Hook zur Verfügung:
+
+[source,groovy]
+----
+project.ext.datenportalDatasetOverride = { context ->
+    context.extraGradleProperties['datasetProfile'] = 'beispiel'
+    context.summaryLines << 'Datensatzspezifisches Profil aktiviert.'
+}
+----
+
+Zusätzliche Properties und Summary-Zeilen werden vom gemeinsamen Build-Kontext und vom erzeugten Ausführungs-Report bereitgestellt. Eine Property verändert den eigentlichen Publikationsablauf nur dann, wenn ein Gradle-Task sie auch auswertet.
+
+`dataset.gradle` erzeugt keinen eigenen Jenkins-Job, ändert keine Startformular-Felder, Berechtigungen oder Datensatzerkennung und ersetzt keine Organisationskonfiguration.
 
 == Technische Unterordner
 

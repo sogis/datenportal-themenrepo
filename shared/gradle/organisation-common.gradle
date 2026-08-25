@@ -1,5 +1,9 @@
 import groovy.json.JsonOutput
-import groovy.json.JsonSlurper
+import java.util.Locale
+import javax.xml.XMLConstants
+import javax.xml.parsers.DocumentBuilderFactory
+import org.w3c.dom.Element
+import org.w3c.dom.Node
 
 if (!project.ext.has('datenportalOrganization')) {
     throw new GradleException(
@@ -11,17 +15,131 @@ File sharedRootDir = new File(project.projectDir.parentFile, 'shared')
 File sharedGradleDir = new File(sharedRootDir, 'gradle')
 File sharedDataDir = new File(sharedRootDir, 'data')
 
+List<File> datasetDefinitionFiles(File datasetDir) {
+    File[] children = datasetDir.listFiles()
+    if (children == null) {
+        return []
+    }
+    return children
+            .findAll { it.isFile() && hasDatasetDefinitionExtension(it.name) }
+            .sort { left, right -> left.name <=> right.name }
+}
+
+boolean hasDatasetDefinitionExtension(String fileName) {
+    String lowerCaseFileName = fileName.toLowerCase(Locale.ROOT)
+    return lowerCaseFileName.endsWith('.xtf') || lowerCaseFileName.endsWith('.xml')
+}
+
+boolean looksLikeDatasetDirectory(File datasetDir) {
+    String folderName = datasetDir.name
+    return folderName.contains('.')
+            && folderName ==~ /^[A-Za-z0-9][A-Za-z0-9_.-]*$/
+            && folderName == folderName.toLowerCase(Locale.ROOT)
+}
+
+Map<String, Object> parseDatasetDefinition(File datasetDefinitionFile) {
+    try {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance()
+        factory.setNamespaceAware(true)
+        factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
+        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, '')
+        factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, '')
+
+        def document = factory.newDocumentBuilder().parse(datasetDefinitionFile)
+        Element datasection = directChildElement(document.documentElement, 'datasection')
+        if (datasection == null) {
+            throw new GradleException('Dataset metadata XML/XTF is missing ili:datasection.')
+        }
+
+        Element metadata = directChildElement(datasection, 'Metadata')
+        if (metadata == null) {
+            throw new GradleException('Dataset metadata XML/XTF is missing Metadata.')
+        }
+
+        List<Element> datasetElements = directChildElements(metadata, ['Dataset', 'DatasetSeries'] as Set)
+        if (datasetElements.size() != 1) {
+            throw new GradleException(
+                    'Dataset metadata XML/XTF must contain exactly one direct Metadata child of type Dataset or DatasetSeries.')
+        }
+
+        Element datasetElement = datasetElements[0]
+        return [
+                id          : requiredDatasetElementText(datasetElement, 'identifier', datasetDefinitionFile),
+                title       : requiredDatasetElementText(datasetElement, 'title', datasetDefinitionFile),
+                description : requiredDatasetElementText(datasetElement, 'description', datasetDefinitionFile),
+                series      : elementLocalName(datasetElement) == 'DatasetSeries',
+                metadataFile: datasetDefinitionFile
+        ]
+    } catch (GradleException ex) {
+        throw ex
+    } catch (Exception ex) {
+        throw new GradleException(
+                "Could not read or parse dataset metadata XML/XTF: ${ex.message}", ex)
+    }
+}
+
+Element directChildElement(Element parent, String expectedLocalName) {
+    for (Node child = parent.firstChild; child != null; child = child.nextSibling) {
+        if (child.nodeType == Node.ELEMENT_NODE && elementLocalName(child) == expectedLocalName) {
+            return child as Element
+        }
+    }
+    return null
+}
+
+List<Element> directChildElements(Element parent, Set<String> expectedLocalNames) {
+    List<Element> elements = []
+    for (Node child = parent.firstChild; child != null; child = child.nextSibling) {
+        if (child.nodeType == Node.ELEMENT_NODE && expectedLocalNames.contains(elementLocalName(child))) {
+            elements << (child as Element)
+        }
+    }
+    return elements
+}
+
+String elementLocalName(Node node) {
+    String localName = node.localName
+    if (localName != null) {
+        return localName
+    }
+    String nodeName = node.nodeName
+    return nodeName.contains(':') ? nodeName.substring(nodeName.indexOf(':') + 1) : nodeName
+}
+
+String requiredDatasetElementText(Element parent, String childName, File sourceFile) {
+    Element child = directChildElement(parent, childName)
+    String value = child?.textContent?.trim()
+    if (!value) {
+        throw new GradleException(
+                "Dataset metadata XML/XTF is missing required non-empty element '${childName}' in ${sourceFile}.")
+    }
+    return value
+}
+
 Map<String, Map<String, Object>> loadDatasets(File organizationDir) {
     Map<String, Map<String, Object>> datasets = [:]
-    def parser = new JsonSlurper()
     organizationDir.eachDir { datasetDir ->
-        File datasetDefinitionFile = new File(datasetDir, 'dataset.json')
-        if (!datasetDefinitionFile.isFile()) {
+        if (!looksLikeDatasetDirectory(datasetDir)) {
             return
         }
 
-        def datasetDefinition = parser.parse(datasetDefinitionFile)
-        String datasetId = (datasetDefinition.id ?: datasetDir.name).toString()
+        List<File> definitionFiles = datasetDefinitionFiles(datasetDir)
+        if (definitionFiles.isEmpty()) {
+            throw new GradleException(
+                    "Dataset folder is missing a dataset metadata file (*.xtf or *.xml): ${datasetDir}")
+        }
+        if (definitionFiles.size() > 1) {
+            throw new GradleException(
+                    "Dataset folder must contain exactly one dataset metadata file (*.xtf or *.xml): ${datasetDir}")
+        }
+
+        File datasetDefinitionFile = definitionFiles[0]
+        Map<String, Object> datasetDefinition = parseDatasetDefinition(datasetDefinitionFile)
+        String datasetId = datasetDir.name
+        if (datasetDefinition.id != datasetId) {
+            throw new GradleException(
+                    "Dataset metadata identifier must match dataset folder name: ${datasetDefinitionFile}")
+        }
         datasets[datasetId] = [
                 dir       : datasetDir,
                 definition: datasetDefinition
@@ -116,7 +234,8 @@ def validateExecutionContext = {
     Map<String, Object> ctx = project.ext.datenportalContext as Map<String, Object>
 
     if (ctx.availableDatasets.isEmpty()) {
-        throw new GradleException("No datasets with dataset.json found in ${project.projectDir}.")
+        throw new GradleException(
+                "No datasets with exactly one .xtf or .xml metadata file found in ${project.projectDir}.")
     }
     if (!ctx.selectedDataset) {
         throw new GradleException(
@@ -129,7 +248,7 @@ def validateExecutionContext = {
     }
     if (ctx.seriesRequired && !ctx.seriesId) {
         throw new GradleException(
-                "Dataset '${ctx.selectedDataset}' requires -PseriesId because dataset.json sets 'series' to true.")
+                "Dataset '${ctx.selectedDataset}' requires -PseriesId because its metadata describes a DatasetSeries.")
     }
     if (!ctx.metadataFile && !ctx.dataFile) {
         throw new GradleException("At least one of -PmetadataFile or -PdataFile must be supplied.")

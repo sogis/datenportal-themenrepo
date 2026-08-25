@@ -15,7 +15,7 @@ Ein neuer Datensatz soll einer bestehenden Organisation hinzugefügt werden.
 
 . Datensatzordner unter der Organisation anlegen.
 . Genau eine `.xtf`- oder `.xml`-Datenblattdatei in den Ordner legen.
-. Optional `dataset.gradle` ergänzen.
+. Optional `dataset.gradle` ergänzen, wenn der Datensatz eigene Gradle-Build-Logik benötigt.
 . Änderungen committen und auf dem produktiv verwendeten Branch bereitstellen.
 . Seed-Job erneut ausführen.
 
@@ -38,11 +38,16 @@ afu/
 ----
 afu/
   ch.so.umwelt.neuer_datensatz/
-    ch.so.umwelt.neuer_datensatz.xtf
+    datenblatt.xml
     dataset.gradle
 ----
 
-`dataset.gradle` darf nur Build-Logik ergänzen. Es ändert keine Jenkins-Job-Konfiguration und keine Startformular-Felder.
+Der Dateiname der Datenblattdatei ist frei wählbar. Ihr Element `identifier`
+muss jedoch `ch.so.umwelt.neuer_datensatz` entsprechen.
+
+`dataset.gradle` wird vom gemeinsamen Gradle-Skript nur für den ausgewählten
+Datensatz geladen. Es darf Build-Logik ergänzen, ändert aber keine Jenkins-
+Job-Konfiguration, Startformular-Felder, Berechtigungen oder Datensatzerkennung.
 
 == Datensatzserie
 

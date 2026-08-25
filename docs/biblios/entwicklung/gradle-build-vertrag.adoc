@@ -66,20 +66,36 @@ Neue Repositories oder Gradle-Plugins werden hier gepflegt und anschliessend in 
 
 == `dataset.gradle`
 
-Ein Datensatz kann optional ein `dataset.gradle` enthalten. Es wird nur geladen, wenn der Datensatz zur Laufzeit ausgewählt wurde.
+Ein Datensatz kann optional ein `dataset.gradle` enthalten. Die Datei wird vom gemeinsamen Gradle-Skript `shared/gradle/organisation-common.gradle` geladen, sobald der ausgewählte Datensatz über seine `.xtf`- oder `.xml`-Metadatendatei aufgelöst wurde. Der Jenkins-Plugin-Scanner lädt die Datei nicht selbst.
 
 Typische Einsatzzwecke:
 
-* datensatzspezifische Properties;
-* zusätzliche GRETL-Tasks;
-* kleine Abweichungen im Publikationsablauf.
+* datensatzspezifische Gradle-Properties oder Build-Konfiguration;
+* zusätzliche oder angepasste Gradle-Tasks;
+* kleine Abweichungen im Publikationsablauf, sofern der aufgerufene Task diese berücksichtigt;
+* zusätzliche Informationen im gemeinsamen Ausführungs-Report.
+
+Die unterstützte Override-Schnittstelle ist ein optionaler Closure in der Datei:
+
+[source,groovy]
+----
+project.ext.datenportalDatasetOverride = { context ->
+    context.extraGradleProperties['datasetProfile'] = 'beispiel'
+    context.summaryLines << 'Datensatzspezifisches Profil aktiviert.'
+}
+----
+
+Der Closure erhält unter anderem den ausgewählten Datensatz, dessen Verzeichnis,
+die gelesenen Metadaten, die Jenkins-/Gradle-Parameter sowie
+`extraGradleProperties` und `summaryLines`.
 
 Nicht geeignet ist `dataset.gradle` für:
 
 * Jenkins-Job-Generierung;
 * zusätzliche Formularfelder;
 * Berechtigungen;
-* Organisation-Defaults.
+* Organisation-Defaults;
+* die Erkennung oder Validierung von Datensätzen.
 
 == GRETL-Auflösung
 

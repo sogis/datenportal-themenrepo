@@ -9,7 +9,7 @@ ext.datenportalOrganization = [
         id            : 'afu',
         title         : 'AFU Datenportal publizieren',
         label         : 'Amt für Umwelt',
-        defaultDataset: 'ch.so.abfall.deponien'
+        defaultDataset: 'ch.so.wasserqualitaet_grundwasser'
 ]
 
 apply from: '../shared/gradle/organisation-common.gradle'
