@@ -3,10 +3,6 @@
 :toc: macro
 :toclevels: 2
 
-include::_partials/aktueller-vertrag.adoc[]
-
-toc::[]
-
 == Grundstruktur
 
 Das Themenrepo besteht aus einem gemeinsamen Bereich `shared/` und je einem Top-Level-Ordner pro Organisation.
@@ -85,28 +81,14 @@ afu/
 
 == Datensatzordner
 
-Ein Unterordner einer Organisation gilt als Datensatz, wenn er genau eine Datenblattdatei mit Endung `.xtf` oder `.xml` enthält.
+Ein Unterordner einer Organisation gilt als Datensatz, wenn er genau eine Datenblattdatei (= Metadaten zum Datensatz) mit Endung `.xtf` oder `.xml` enthält. Der Dateiname ist frei wählbar, zum Beispiel datenblatt.xml. Entscheidend ist, dass der identifier im Inhalt der Datenblattdatei dem Namen des Datensatzordners entspricht. Mehrere .xtf- oder .xml-Dateien sind nicht erlaubt.
 
 [source,text]
 ----
 <organisation>/
   <dataset-id>/
-    <dataset-id>.xtf
+    <dateiname>.xtf
 ----
 
 Ordnernamen, die wie Datensatz-IDs aussehen, aber keine passende Datenblattdatei enthalten, sind Validierungsfehler. Andere technische Unterordner werden ignoriert.
 
-== Bewusst nicht Teil der Struktur
-
-Folgende Elemente gehören nicht zum Themenrepo-Vertrag:
-
-* `dataset-gui.yaml`;
-* `gui`-Blöcke in YAML;
-* frei definierbare Formularfelder im Themenrepo;
-* ein globales `build.gradle` für alle Organisationen;
-* ein eigenes `build.gradle` pro Datensatz.
-
-== Weiterführend
-
-* Wie das Plugin diese Struktur scannt und welche Fehlermeldungen daraus entstehen, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] dokumentiert.
-* Wie diese Struktur lokal in Jenkins ausgecheckt und getestet wird, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] dokumentiert.

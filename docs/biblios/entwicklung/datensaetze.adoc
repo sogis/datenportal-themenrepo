@@ -3,13 +3,9 @@
 :toc: macro
 :toclevels: 2
 
-include::_partials/aktueller-vertrag.adoc[]
-
-toc::[]
-
 == Erkennung
 
-Ein Datensatz ist ein Unterordner einer Organisation mit genau einer Datenblattdatei. Die Datenblattdatei muss die Endung `.xtf` oder `.xml` haben.
+Ein Datensatz ist ein Unterordner einer Organisation mit genau einer Datenblattdatei. Die Datenblattdatei muss die Endung `.xtf` oder `.xml` haben. Der Dateiname der Datenblattdatei ist frei wählbar. Entscheidend ist, dass genau eine `.xtf`- oder `.xml`-Datei vorhanden ist und deren `identifier` (XML-Attribut) dem Namen des Datensatzordners entspricht.
 
 [source,text]
 ----

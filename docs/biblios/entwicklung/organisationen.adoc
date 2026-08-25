@@ -3,10 +3,6 @@
 :toc: macro
 :toclevels: 2
 
-include::_partials/aktueller-vertrag.adoc[]
-
-toc::[]
-
 == Erkennung
 
 Eine Organisation ist ein Top-Level-Ordner mit gültiger `gretl-datenportal-job.yaml`.
@@ -54,36 +50,87 @@ permissions:
 
 == Teams
 
-Die Benutzerzuordnung wird zentral in `shared/gretl-datenportal-teams.yaml`
-verwaltet. Eine Team-ID wird dort genau einmal definiert und kann von mehreren
-Organisationsdateien verwendet werden:
+Die Benutzer- und Berechtigungszuordnung erfolgt zentral über
+`shared/gretl-datenportal-teams.yaml`. Dort werden Team-IDs den Benutzer-IDs
+der Jenkins-Authentisierungsquelle zugeordnet:
 
 [source,yaml]
 ----
 teams:
   datenportal-read:
     users:
-      - read-user
+      - user-read
+
   afu-build:
     users:
-      - afu-user
+      - user-build
+
+  gretl-datenportal-seed-operators:
+    users:
+      - user-seed
 ----
 
-Die Benutzer-IDs müssen den IDs der konfigurierten Jenkins-
-Authentisierungsquelle entsprechen. Das Seeder-Team wird nicht in einer
-Organisationsdatei referenziert; es wird global über
-`seedJobOperatorsTeam` in Jenkins konfiguriert.
+Die Benutzer-IDs müssen den IDs entsprechen, die Jenkins von der konfigurierten
+Authentisierungsquelle erhält. In der produktiven Umgebung ist dies das Active
+Directory des AIO. In der lokalen Entwicklungsumgebung stammen die IDs aus dem
+JCasC-Local-Security-Realm.
 
-Im lokalen Entwicklungsstack stammen diese IDs aus dem JCasC-Local-
+Organisationen referenzieren die Teams in ihrer
+`gretl-datenportal-job.yaml`:
+
+[source,yaml]
+----
+permissions:
+  read:
+    - team: datenportal-read
+  build:
+    - team: afu-build
+----
+
+Mehrere Team-Referenzen werden additiv ausgewertet. Es genügt, Mitglied eines
+der angegebenen Teams zu sein. Mitglieder eines `build`-Teams erhalten
+automatisch auch Leserecht; Leserecht allein erlaubt jedoch keinen Build.
+
+[source,yaml]
+----
+permissions:
+  read:
+    - team: datenportal-read
+    - team: afu-read
+  build:
+    - team: afu-build
+----
+
+Eine Mitgliedschaft in `datenportal-read` oder `afu-read` erlaubt das Lesen.
+Eine Mitgliedschaft in `afu-build` erlaubt Lesen und Starten des Jobs. Ist eine
+Person Mitglied mehrerer dieser Teams, werden ihre Berechtigungen vereinigt.
+
+Im lokalen Entwicklungsstack stammen Benutzer-IDs aus dem JCasC-Local-
 Security-Realm des Repositories `datenportal-jenkins-dev`; deshalb kann dort
 ohne AD/LDAP getestet werden. In produktiven Umgebungen müssen dieselben
-Teamdatei-IDs den Benutzer-IDs der konfigurierten AD-/LDAP-/Entra-
-Authentisierungsquelle entsprechen.
+Teamdatei-IDs den Benutzer-IDs der konfigurierten AD-/LDAP-/Entra-Authentisierungsquelle entsprechen.
 
 Produktive Änderungen an Organisationen und Teams werden committed und über
 den konfigurierten Git-Branch geseedet. Für lokale Plugin-Entwicklung darf die
 technische Dev-Umgebung alternativ ihren `working-tree`-Snapshot verwenden;
 die YAML- und Verzeichnisregeln dieses Vertrags bleiben identisch.
+
+Das Seeder-Team wird nicht in einer Organisationsdatei referenziert. Es wird
+global in Jenkins unter
+
+`Manage Jenkins → System → GRETL Datenportal Jobs → Seed-Job Operators Team`
+
+konfiguriert. In einer JCasC-Konfiguration entspricht dies:
+
+[source,yaml]
+----
+unclassified:
+  gretlDatenportalJobs:
+    seedJobOperatorsTeam: "gretl-datenportal-seed-operators"
+----
+
+Die eingetragene Team-ID muss in `shared/gretl-datenportal-teams.yaml`
+vorhanden sein. Unbekannte oder leere Teams führen zu einem Validierungsfehler.
 
 == Optionale Metadaten
 
@@ -113,12 +160,6 @@ Eine Organisation ist ungültig, wenn:
 * `gretl-datenportal-job.yaml` fehlt;
 * die YAML-Datei nicht geparst werden kann;
 * `permissions.read` oder `permissions.build` fehlt oder leer ist;
-* `gui`-Blöcke verwendet werden;
 * der Ordner offensichtlich Organisation-Inhalt enthält, aber unvollständig ist.
 
 Ungültige Organisationen werden beim Scan gemeldet und beim Seed-Lauf ignoriert.
-
-== Weiterführend
-
-* Die serverseitige Rechteprüfung und die effektive Nutzung dieser Felder sind im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] beschrieben.
-* Für lokale Seed-Läufe und End-to-End-Tests ist das Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] zuständig.

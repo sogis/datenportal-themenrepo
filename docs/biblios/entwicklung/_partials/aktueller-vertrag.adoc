@@ -1,6 +1,0 @@
-[IMPORTANT]
-====
-Diese Dokumentation beschreibt den aktuellen Implementationsvertrag zwischen Themenrepo, Jenkins-Plugin und Jenkins-Controller.
-
-Massgebend ist der Scanner des Jenkins-Plugins: Organisationen werden über `gretl-datenportal-job.yaml` erkannt, Datensätze über genau eine `.xtf`- oder `.xml`-Datenblattdatei im jeweiligen Datensatzordner.
-====
