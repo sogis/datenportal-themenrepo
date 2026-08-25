@@ -3,8 +3,6 @@
 :toc: macro
 :toclevels: 2
 
-toc::[]
-
 == Grundsatz
 
 Das Startformular ist fix. Es wird nicht mehr aus YAML- oder Datensatzkonfiguration im Themenrepo zusammengesetzt.
@@ -34,19 +32,6 @@ Das Startformular ist fix. Es wird nicht mehr aus YAML- oder Datensatzkonfigurat
 | Nur sichtbar, wenn das Datenblatt eine `DatasetSeries` beschreibt.
 |===
 
-== Nicht mehr vorhandene Felder
-
-Die generierten Jenkins-Jobs stellen folgende frühere Felder nicht mehr bereit:
-
-* `ENVIRONMENT`;
-* `DRY_RUN`;
-* `CONFIRM_PRODUCTION`.
-
 == Keine GUI-Konfiguration im Themenrepo
 
-Das Themenrepo kann keine zusätzlichen Formularfelder definieren. Abgelöste `gui`-Blöcke in `gretl-datenportal-job.yaml` oder `shared/gretl-datenportal-defaults.yaml` werden zurückgewiesen.
-
-== Weiterführend
-
-* Das effektive Startformular und seine serverseitige Validierung sind im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] dokumentiert.
-* Die lokale Jenkins-Oberfläche für manuelle Formular-Tests liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].
+Das Themenrepo kann keine zusätzlichen Formularfelder definieren. 

@@ -68,5 +68,3 @@ include::referenz-gretl-datenportal-job-yaml.adoc[leveloffset=+1]
 include::referenz-startformular.adoc[leveloffset=+1]
 
 include::referenz-scan-validierung.adoc[leveloffset=+1]
-
-include::quellen-notiz.adoc[leveloffset=+1]

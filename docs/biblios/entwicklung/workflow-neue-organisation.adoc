@@ -3,10 +3,6 @@
 :toc: macro
 :toclevels: 2
 
-include::_partials/aktueller-vertrag.adoc[]
-
-toc::[]
-
 == Ziel
 
 Eine neue Organisation soll im Themenrepo so angelegt werden, dass das Jenkins-Plugin sie beim nächsten Seed-Lauf erkennt und daraus einen Jenkins-Job generiert.
@@ -74,7 +70,3 @@ Nach einem erfolgreichen Seed-Lauf:
 
 Ohne Seed-Lauf erscheint die Organisation nicht als generierter Jenkins-Job. Ohne gültige Berechtigungen wird die Organisation als ungültig behandelt. Ohne `build.gradle` kann die Pipeline nicht ausgeführt werden.
 
-== Weiterführend
-
-* Wie der Seed-Lauf diese neue Organisation scannt und materialisiert, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] beschrieben.
-* Wie lokaler Bootstrap und Jenkins-Restart für Tests funktionieren, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.

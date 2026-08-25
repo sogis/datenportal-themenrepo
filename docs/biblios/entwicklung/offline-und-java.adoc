@@ -9,7 +9,7 @@ toc::[]
 
 Das Offline-Bundle wird nicht im Themenrepo gebaut. Zuständig ist das Repository `datenportal-jenkins-dev`.
 
-Das Themenrepo muss aber so aufgebaut sein, dass der vorbereitete Offline-Vertrag funktioniert.
+Das Themenrepo muss aber so aufgebaut sein, dass der vorbereitete Offline-Vertrag funktioniert. In der Regel verwenden wir sowohl in der Produktion wie auch zum lokalen Entwickeln ein Dockerimage mit dem Offline-Bundle, damit sichergestellt wird, dass die gleiche GRETL-Version verwendet wird und dass nicht zur Laufzeit Dependencies im Internet heruntergeladen werden müssen.
 
 Beim Bundle- oder Image-Bau ist dieses Repository die Build-Quelle. Zur
 Jenkins-Laufzeit wird die Repository-Quelle separat konfiguriert: produktiv als
@@ -84,7 +84,3 @@ DATENPORTAL_OFFLINE_JARS_DIR="../datenportal-jenkins-dev/build/offline-bundle/ja
 
 Für harte Airgap-Tests genügt `--offline` allein nicht. Zusätzlich muss der Container oder Prozess ohne Netzwerkzugang laufen.
 
-== Weiterführend
-
-* Der Bau des Offline-Bundles und die lokale Jenkins-Laufzeit liegen im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].
-* Die Job- und Pipeline-Logik, die später gegen dieses Bundle läuft, liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin].

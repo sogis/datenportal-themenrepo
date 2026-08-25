@@ -7,7 +7,12 @@ toc::[]
 
 == Zweck des Seed-Laufs
 
-Der Seed-Lauf scannt das Themenrepo und erzeugt oder aktualisiert die materialisierten Jenkins-Jobs. Die generierten Jobs sind keine Live-Ansicht auf das Repository.
+Der Seed-Lauf scannt das Themenrepo und erzeugt oder aktualisiert daraus die
+materialisierten Jenkins-Jobs. Eine Organisation wird dabei nur erkannt, wenn
+sie die erwartete Organisationskonfiguration mit dem exakt vorgesehenen
+Dateinamen enthält. Andere Dateien oder abweichende Dateinamen werden vom
+Scanner ignoriert. Die generierten Jobs sind keine Live-Ansicht auf das
+Repository.
 
 == Wann muss neu geseedet werden?
 
@@ -23,20 +28,19 @@ Ein Seed-Lauf ist nötig nach Änderungen an:
 
 == Lokaler Bootstrap
 
-Nach einem frischen lokalen Checkout provisioniert das Jenkins-Plugin den Seed-Job `gretl-datenportal-seed` nach dem Start automatisch. Er wird nicht mehr per JCasC erzeugt und ueber die globale Plugin-Konfiguration gesteuert.
+Nach einem frischen lokalen Checkout provisioniert das Jenkins-Plugin den Seed-Job `gretl-datenportal-seed` nach dem Start automatisch. 
 
 In der lokalen Dev-Umgebung kommen Repository-Quelle und Modus aus
 `datenportal-jenkins-dev/casc/jenkins.yaml` beziehungsweise den Env-Variablen
 `THEMEN_REPO_MODE`, `THEMEN_REPO_URL`, `THEMEN_REPO_PATH` und
 `THEMEN_REPO_BRANCH`.
 
-Für lokale Tests verwendet `datenportal-jenkins-dev` den JCasC-Local-
-Security-Realm. Eine AD-/LDAP-Umgebung ist dafür nicht erforderlich. In einer
+Für lokale Tests verwendet `datenportal-jenkins-dev` den JCasC-Local-Security-Realm. Eine AD-/LDAP-Umgebung ist dafür nicht erforderlich. In einer
 produktiven Umgebung liefert dagegen die konfigurierte
 AD-/LDAP-/Entra-Authentisierung die Jenkins-Benutzer-IDs, die in
 `shared/gretl-datenportal-teams.yaml` referenziert werden.
 
-Der Seed-Job laeuft periodisch per Cron (`H/15 * * * *`) und kann fuer Tests jederzeit manuell gestartet werden. Die generierten Organisation-Jobs entstehen erst nach dem Seed-Lauf.
+Der Seed-Job laeuft periodisch per Cron (`H/15 * * * *`) und kann für Tests jederzeit manuell gestartet werden. Die generierten Organisation-Jobs entstehen erst nach dem Seed-Lauf.
 
 Im produktionsnahen Modus `managed-git` checkt der Seed-Lauf den committed Stand
 des konfigurierten Git-Branches aus. Der lokale Modus `working-tree` kopiert
@@ -47,24 +51,6 @@ Damit ist klar, ob eine Änderung fachlich versioniert oder nur lokal getestet
 wird. Nach einem frischen lokalen Start führt `admin` den ersten Seed-Lauf aus;
 danach kann das Mitglied des konfigurierten Seeder-Teams `seed-user` den Seeder
 starten.
-
-[source,text]
-----
-gretl-datenportal-seed
-----
-
-Nach einem erfolgreichen Lauf werden die gültigen Organisationen als Jobs
-materialisiert. Im aktuellen lokalen Fixture wird `gretl-datenportal-afu`
-erzeugt. Der Statistikdienst ist derzeit vorbereitet, wird aber nicht erzeugt,
-weil die Datei `statistikdienst/XXXXXgretl-datenportal-job.yaml` wegen des
-`XXXXX`-Markers nicht als `gretl-datenportal-job.yaml` erkannt wird. Die
-Aktivierung dieses Fixtures ist nicht Teil der lokalen Authentisierungs- und
-Seed-Workflow-Dokumentation.
-
-[source,text]
-----
-gretl-datenportal-afu
-----
 
 == Was versioniert ist
 

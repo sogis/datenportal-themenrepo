@@ -3,10 +3,6 @@
 :toc: macro
 :toclevels: 2
 
-include::_partials/aktueller-vertrag.adoc[]
-
-toc::[]
-
 == Organisationserkennung
 
 Top-Level-Ordner werden als Organisationen erkannt, wenn sie eine gültige `gretl-datenportal-job.yaml` enthalten.
@@ -55,7 +51,3 @@ Diese Felder können in YAML vorkommen, werden von dieser Plugin-Version aber ni
 
 Die Organisations-ID ergibt sich aus dem Ordnernamen.
 
-== Weiterführend
-
-* Die konkrete Scanner-Implementierung und das Fehlerverhalten sind im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] dokumentiert.
-* Die lokale Jenkins-Umgebung für Seed-Läufe und Integrationsprüfungen liegt im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].

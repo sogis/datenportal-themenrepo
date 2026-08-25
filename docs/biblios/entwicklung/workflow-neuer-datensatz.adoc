@@ -3,10 +3,6 @@
 :toc: macro
 :toclevels: 2
 
-include::_partials/aktueller-vertrag.adoc[]
-
-toc::[]
-
 == Ziel
 
 Ein neuer Datensatz soll einer bestehenden Organisation hinzugefügt werden.
@@ -68,8 +64,3 @@ Wenn das Datenblatt eine `DatasetSeries` beschreibt, zeigt das fixe Startformula
 | Erwartung zusätzlicher Formularfelder aus dem Datensatzordner
 | Nicht unterstützt.
 |===
-
-== Weiterführend
-
-* Wie der Datensatzscan und die Validierung technisch ablaufen, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] beschrieben.
-* Wie Datensätze lokal mit Jenkins und dem Offline-Bundle geprüft werden, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.
