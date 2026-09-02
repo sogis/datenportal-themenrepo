@@ -15,7 +15,7 @@ Das Repository beantwortet aus Sicht des Plugins drei Fragen:
 
 == Abgrenzung zu anderen Repositories
 
-Das Themenrepo ist ein Consumer des Betriebs- und Plugin-Setups. Der Jenkins-Controller und das Image werden im Repo `datenportal-jenkins-dev` vorbereitet. Das Jenkins-Plugin wird im Repo `datenportal-jenkins-gretl-plugin` entwickelt. Das Themenrepo selbst enthält den fachlichen Input für diese Infrastruktur.
+Das Themenrepo ist ein Consumer des Betriebs- und Plugin-Setups. Der Jenkins-Controller und das Dockerimage werden im Repo `datenportal-jenkins-dev` vorbereitet. Das Jenkins-Plugin wird im Repo `datenportal-jenkins-gretl-plugin` entwickelt. Das Themenrepo selbst enthält den fachlichen Input für diese Infrastruktur.
 
 [cols="1,2",options="header"]
 |===
@@ -42,5 +42,4 @@ Der Vertrag ist deshalb bewusst streng:
 * Organisationen brauchen eine gültige `gretl-datenportal-job.yaml`.
 * Datensätze brauchen genau eine Datenblattdatei mit Endung `.xtf` oder `.xml`.
 * Berechtigungen müssen explizit gesetzt sein.
-* GUI-Konfigurationen im Themenrepo werden zurückgewiesen.
 * Nach strukturellen Änderungen ist ein Seed-Lauf notwendig.

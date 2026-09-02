@@ -10,25 +10,25 @@ Das Themenrepo besteht aus einem gemeinsamen Bereich `shared/` und je einem Top-
 [source,text]
 ----
 shared/
-  gretl-datenportal-defaults.yaml
-  gretl-datenportal-teams.yaml
-  Jenkinsfile
-  bin/
-    gradlew-java17.sh
-  gradle/
-    gradle-build.properties
-    init.gradle
-    organisation-common.gradle
-  data/
-    offices.xtf
+├── gretl-datenportal-defaults.yaml
+├── gretl-datenportal-teams.yaml
+├── Jenkinsfile
+├── bin/
+│   └── gradlew-java17.sh
+├── gradle/
+│   ├── gradle-build.properties
+│   ├── init.gradle
+│   └── organisation-common.gradle
+└── data/
+    └── offices.xtf
 
 <organisation>/
-  build.gradle
-  gretl-datenportal-job.yaml
-  Jenkinsfile                  # optional
-  <dataset>/
-    <datenblatt>.xtf           # genau eine .xtf- oder .xml-Datei
-    dataset.gradle             # optional
+├── build.gradle
+├── gretl-datenportal-job.yaml
+├── Jenkinsfile                      # optional
+└── <dataset>/
+    ├── <datenblatt>.xtf             # genau eine .xtf- oder .xml-Datei
+    └── dataset.gradle               # optional
 ----
 
 == Gemeinsamer Bereich `shared/`
