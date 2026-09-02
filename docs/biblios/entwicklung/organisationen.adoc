@@ -9,11 +9,11 @@ Eine Organisation ist ein Top-Level-Ordner mit gültiger `gretl-datenportal-job.
 
 [source,text]
 ----
-afu/
-  build.gradle
-  gretl-datenportal-job.yaml
-  ch.so.umwelt.beispiel/
-    ch.so.umwelt.beispiel.xtf
+neue-org/
+├── build.gradle
+├── gretl-datenportal-job.yaml
+└── ch.so.neueorg.beispiel/
+    └── ch.so.neueorg.beispiel.xtf
 ----
 
 Der Ordnername ist die kanonische Organisations-ID. Ein YAML-Feld `id` wird für Organisation-Jobs nicht als massgebend verwendet.

@@ -26,10 +26,10 @@ verbindlich.
 [source,text]
 ----
 neue-org/
-  build.gradle
-  gretl-datenportal-job.yaml
-  ch.so.neueorg.beispiel/
-    ch.so.neueorg.beispiel.xtf
+├── build.gradle
+├── gretl-datenportal-job.yaml
+└── ch.so.neueorg.beispiel/
+    └── ch.so.neueorg.beispiel.xtf
 ----
 
 == Minimale `gretl-datenportal-job.yaml`

@@ -3,7 +3,10 @@
 :toc: macro
 :toclevels: 2
 
-toc::[]
+DAS ÄNDERT SICH NOCH.
+
+- garage auch im dev stack
+- gretl/gradle auch im container verwenden?
 
 == Zweck und Abgrenzung
 

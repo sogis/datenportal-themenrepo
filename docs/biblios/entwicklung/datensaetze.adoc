@@ -10,8 +10,8 @@ Ein Datensatz ist ein Unterordner einer Organisation mit genau einer Datenblattd
 [source,text]
 ----
 afu/
-  ch.so.umwelt.beispiel/
-    ch.so.umwelt.beispiel.xtf
+└── ch.so.umwelt.beispiel/
+    └── ch.so.umwelt.beispiel.xtf
 ----
 
 oder:
@@ -19,8 +19,8 @@ oder:
 [source,text]
 ----
 statistikdienst/
-  ch.so.bevoelkerung.beispiel/
-    datenblatt.xml
+└── ch.so.bevoelkerung.beispiel/
+    └── datenblatt.xml
 ----
 
 Der Jenkins-Plugin-Scanner und die gemeinsame Gradle-Logik erwarten pro Datensatzordner genau eine solche Metadatendatei. Mehrdeutige, fehlende oder inhaltlich nicht zum Ordner passende Metadatendateien sind Validierungsfehler.
@@ -36,9 +36,9 @@ Ein Datensatzordner kann optional eine Datei `dataset.gradle` enthalten.
 [source,text]
 ----
 afu/
-  ch.so.umwelt.beispiel/
-    ch.so.umwelt.beispiel.xtf
-    dataset.gradle
+└── ch.so.umwelt.beispiel/
+    ├── ch.so.umwelt.beispiel.xtf
+    └── dataset.gradle
 ----
 
 `dataset.gradle` ist eine optionale datensatzspezifische Gradle-Erweiterung. Sie wird nicht vom Jenkins-Plugin geladen, sondern von `shared/gradle/organisation-common.gradle`, wenn der Datensatz über `-Pdataset` ausgewählt und erfolgreich aufgelöst wurde.

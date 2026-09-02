@@ -71,12 +71,12 @@ Ein Top-Level-Ordner ist nur dann eine Organisation, wenn er eine gültige `gret
 [source,text]
 ----
 afu/
-  build.gradle
-  gretl-datenportal-job.yaml
-  Jenkinsfile
-  ch.so.umwelt.beispiel/
-    ch.so.umwelt.beispiel.xtf
-    dataset.gradle
+├── build.gradle
+├── gretl-datenportal-job.yaml
+├── Jenkinsfile                         # optional
+└── ch.so.umwelt.beispiel/
+    ├── ch.so.umwelt.beispiel.xtf
+    └── dataset.gradle                  # optional
 ----
 
 == Datensatzordner

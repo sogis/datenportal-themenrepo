@@ -24,8 +24,8 @@ Commit getestet werden. Das ist ein technischer Snapshot der Dev-Umgebung und
 [source,text]
 ----
 afu/
-  ch.so.umwelt.neuer_datensatz/
-    ch.so.umwelt.neuer_datensatz.xtf
+└── ch.so.umwelt.neuer_datensatz/
+    └── ch.so.umwelt.neuer_datensatz.xtf
 ----
 
 == Mit datensatzspezifischem Build-Override
@@ -33,9 +33,9 @@ afu/
 [source,text]
 ----
 afu/
-  ch.so.umwelt.neuer_datensatz/
-    datenblatt.xml
-    dataset.gradle
+└── ch.so.umwelt.neuer_datensatz/
+    ├── datenblatt.xml
+    └── dataset.gradle
 ----
 
 Der Dateiname der Datenblattdatei ist frei wählbar. Ihr Element `identifier`
