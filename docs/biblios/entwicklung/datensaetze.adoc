@@ -9,9 +9,9 @@ Ein Datensatz ist ein Unterordner einer Organisation mit genau einer Datenblattd
 
 [source,text]
 ----
-afu/
-└── ch.so.umwelt.beispiel/
-    └── ch.so.umwelt.beispiel.xtf
+agi/
+└── ch.so.agi.beispiel/
+    └── ch.so.agi.beispiel.xtf
 ----
 
 oder:
@@ -35,9 +35,9 @@ Ein Datensatzordner kann optional eine Datei `dataset.gradle` enthalten.
 
 [source,text]
 ----
-afu/
-└── ch.so.umwelt.beispiel/
-    ├── ch.so.umwelt.beispiel.xtf
+agi/
+└── ch.so.agi.beispiel/
+    ├── ch.so.agi.beispiel.xtf
     └── dataset.gradle
 ----
 

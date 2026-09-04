@@ -43,7 +43,7 @@ permissions:
   read:
     - team: datenportal-read
   build:
-    - team: afu-build
+    - team: agi-build
 ----
 
 `permissions.read` und `permissions.build` sind Pflichtfelder. Beide Listen müssen mindestens eine Team-Referenz enthalten. Jede referenzierte Team-ID muss in `shared/gretl-datenportal-teams.yaml` definiert sein. Unbekannte oder leere Teams machen die Organisation ungültig.
@@ -61,7 +61,7 @@ teams:
     users:
       - user-read
 
-  afu-build:
+  agi-build:
     users:
       - user-build
 
@@ -84,7 +84,7 @@ permissions:
   read:
     - team: datenportal-read
   build:
-    - team: afu-build
+    - team: agi-build
 ----
 
 Mehrere Team-Referenzen werden additiv ausgewertet. Es genügt, Mitglied eines
@@ -96,13 +96,13 @@ automatisch auch Leserecht; Leserecht allein erlaubt jedoch keinen Build.
 permissions:
   read:
     - team: datenportal-read
-    - team: afu-read
+    - team: agi-read
   build:
-    - team: afu-build
+    - team: agi-build
 ----
 
-Eine Mitgliedschaft in `datenportal-read` oder `afu-read` erlaubt das Lesen.
-Eine Mitgliedschaft in `afu-build` erlaubt Lesen und Starten des Jobs. Ist eine
+Eine Mitgliedschaft in `datenportal-read` oder `agi-read` erlaubt das Lesen.
+Eine Mitgliedschaft in `agi-build` erlaubt Lesen und Starten des Jobs. Ist eine
 Person Mitglied mehrerer dieser Teams, werden ihre Berechtigungen vereinigt.
 
 Im lokalen Entwicklungsstack stammen Benutzer-IDs aus dem JCasC-Local-
@@ -136,11 +136,11 @@ vorhanden sein. Unbekannte oder leere Teams führen zu einem Validierungsfehler.
 
 [source,yaml]
 ----
-title: Amt für Umwelt
-description: Publikationsjobs für Daten des Amts für Umwelt.
+title: Amt für Geoinformation
+description: Datenportal-Ausführungen des Amts für Geoinformation.
 
 execution:
-  jobName: gretl-datenportal-afu
+  jobName: gretl-datenportal-agi
   gradleTask: publishToDatenportal
   timeoutMinutes: 60
 

@@ -24,7 +24,7 @@ Es gibt kein globales `build.gradle` für alle Organisationen. Jede Organisation
 
 [source,text]
 ----
-afu/build.gradle
+agi/build.gradle
 statistikdienst/build.gradle
 ----
 
@@ -32,7 +32,7 @@ Der Gradle Wrapper wird im Repo-Root gestartet, aber mit `-p <organisation>` auf
 
 [source,bash]
 ----
-./gradlew -I "$PWD/shared/gradle/init.gradle" -p afu tasks
+./gradlew -I "$PWD/shared/gradle/init.gradle" -p agi tasks
 ./gradlew -I "$PWD/shared/gradle/init.gradle" -p statistikdienst verifyPluginSetup
 ----
 
@@ -101,4 +101,3 @@ Nicht geeignet ist `dataset.gradle` für:
 == GRETL-Auflösung
 
 GRETL wird online über die zentralen Repository-Listen aufgelöst. Für SNAPSHOT-Versionen muss beim Bau des Offline-Bundles mit aktualisierten Abhängigkeiten gerechnet werden. Das Offline-Bundle wird nicht im Themenrepo erzeugt, sondern im Jenkins-/Image-Repo vorbereitet.
-

@@ -81,10 +81,10 @@ Optional kann der Gradle-Build-Vertrag direkt im Themenrepo geprüft werden:
 
 [source,bash]
 ----
-./gradlew -I "$PWD/shared/gradle/init.gradle" -p afu tasks
+./gradlew -I "$PWD/shared/gradle/init.gradle" -p agi tasks
 ----
 
-Dabei ist `afu` durch den betroffenen Organisationsordner zu ersetzen. Die
+Dabei ist `agi` durch den betroffenen Organisationsordner zu ersetzen. Die
 Details zum Build-Vertrag und zum Offline-Test stehen in
 xref:gradle-build-vertrag[Gradle-Build-Vertrag] und
 xref:_offline_bundle_und_java_laufzeiten[Offline-Bundle und Java-Laufzeiten].

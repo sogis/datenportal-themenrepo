@@ -35,6 +35,9 @@ Der aktuelle Vertrag ist bewusst streng:
 - Ein Datensatz ist ein Unterordner mit genau einer `.xtf`- oder `.xml`-Datei.
 - `permissions.read` und `permissions.build` referenzieren Teams aus
   `shared/gretl-datenportal-teams.yaml`.
+- Der Standardtask `publishToDatenportal` validiert Eingaben und schreibt einen
+  Ausführungsreport. Eine fachliche Datenpublikation ist darin noch nicht
+  implementiert.
 - `shared/gradle/gradle-build.properties` bleibt die Source of Truth fuer
   Plugin-Versionen, Repository-URLs und Offline-Seed-Koordinaten.
 
@@ -73,7 +76,7 @@ Online-Test:
 
 ```bash
 cd ../datenportal-themenrepo
-./gradlew -I "$PWD/shared/gradle/init.gradle" -p afu tasks
+./gradlew -I "$PWD/shared/gradle/init.gradle" -p agi tasks
 ```
 
 Offline-Test nach Bundle-Bau im Schwester-Repo:

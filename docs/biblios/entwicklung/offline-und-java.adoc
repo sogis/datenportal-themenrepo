@@ -79,8 +79,7 @@ cd ../datenportal-jenkins-dev
 cd ../datenportal-themenrepo
 GRADLE_USER_HOME="../datenportal-jenkins-dev/build/offline-bundle/gradle-user-home" \
 DATENPORTAL_OFFLINE_JARS_DIR="../datenportal-jenkins-dev/build/offline-bundle/jars" \
-./gradlew --offline -I "$PWD/shared/gradle/init.gradle" -p afu tasks
+./gradlew --offline -I "$PWD/shared/gradle/init.gradle" -p agi tasks
 ----
 
 Für harte Airgap-Tests genügt `--offline` allein nicht. Zusätzlich muss der Container oder Prozess ohne Netzwerkzugang laufen.
-

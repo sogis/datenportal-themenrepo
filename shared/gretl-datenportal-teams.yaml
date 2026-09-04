@@ -6,12 +6,14 @@ teams:
   datenportal-read:
     users:
       - read-user
-      - afu-user
-      - statistikdienst-user
 
-  afu-build:
+  agi-build:
     users:
-      - afu-user
+      - agi-user
+
+  mfk-build:
+    users:
+      - mfk-user
 
   statistikdienst-build:
     users:

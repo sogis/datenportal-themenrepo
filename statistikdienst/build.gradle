@@ -1,16 +1,14 @@
 plugins {
     id 'ch.so.agi.gretl'
-    id 'de.undercouch.download'
-    id 'org.hidetake.ssh'
 }
 
-description = 'Statistikdienst Datenportal build examples using the modern GRETL plugin DSL.'
+description = 'Datenportal-Ausführungen des Statistikdiensts.'
 
 ext.datenportalOrganization = [
         id            : 'statistikdienst',
-        title         : 'Statistikdienst Datenportal publizieren',
+        title         : 'Statistikdienst',
         label         : 'Statistikdienst',
-        defaultDataset: 'ch.so.statistik.bevoelkerung'
+        defaultDataset: 'ch.so.bevoelkerung.altersstruktur'
 ]
 
 apply from: '../shared/gradle/organisation-common.gradle'

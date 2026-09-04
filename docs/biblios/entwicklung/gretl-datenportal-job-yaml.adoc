@@ -15,7 +15,7 @@ permissions:
   read:
     - team: datenportal-read
   build:
-    - team: afu-build
+    - team: agi-build
 ----
 
 == Felder
@@ -89,4 +89,3 @@ permissions:
 * `execution.*` in der Organisation überschreibt Shared Defaults.
 * Fehlende `notifications` deaktivieren Shared Notifications nicht.
 * Jenkins-Administratoren behalten ihren bestehenden Bypass für Lesen und Build.
-
