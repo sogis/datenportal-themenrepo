@@ -15,6 +15,8 @@ File sharedRootDir = new File(project.projectDir.parentFile, 'shared')
 File sharedGradleDir = new File(sharedRootDir, 'gradle')
 File sharedDataDir = new File(sharedRootDir, 'data')
 
+apply from: new File(sharedGradleDir, 'datenportal-s3.gradle')
+
 List<File> datasetDefinitionFiles(File datasetDir) {
     File[] children = datasetDir.listFiles()
     if (children == null) {

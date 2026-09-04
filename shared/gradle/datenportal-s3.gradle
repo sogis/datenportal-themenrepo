@@ -1,0 +1,102 @@
+/*
+ * Shared S3 configuration for GRETL upload tasks.
+ *
+ * Gradle exposes ORG_GRADLE_PROJECT_<name> environment variables as normal
+ * project properties. The values are read once here, but required-property
+ * validation is deliberately deferred until an S3 task is executed.
+ */
+
+def readDatenportalS3Property = { String propertyName ->
+    def value = project.findProperty(propertyName)
+    value == null ? null : value.toString()
+}
+
+Map<String, Object> datenportalS3 = [
+        endpoint : readDatenportalS3Property('s3Endpoint')?.trim(),
+        region   : readDatenportalS3Property('s3Region')?.trim(),
+        bucketName: readDatenportalS3Property('s3BucketName')?.trim(),
+        accessKey: readDatenportalS3Property('s3AccessKey'),
+        secretKey: readDatenportalS3Property('s3SecretKey'),
+        acl      : readDatenportalS3Property('s3Acl')?.trim() ?: 'private'
+]
+
+def hasText = { Object value ->
+    value != null && !value.toString().trim().isEmpty()
+}
+
+def requireDatenportalS3 = {
+    Map<String, String> propertyNames = [
+            endpoint : 's3Endpoint',
+            region   : 's3Region',
+            bucketName: 's3BucketName',
+            accessKey: 's3AccessKey',
+            secretKey: 's3SecretKey'
+    ]
+    List<String> missing = propertyNames.findAll { key, propertyName ->
+        !hasText(datenportalS3[key])
+    }.values().toList()
+
+    if (!missing.isEmpty()) {
+        throw new GradleException(
+                "S3 configuration is incomplete. Missing Gradle properties: ${missing.join(', ')}")
+    }
+    return datenportalS3
+}
+
+def configureDatenportalS3Upload = { Object uploadTask ->
+    // Gradle validates non-optional S3 task inputs before doFirst executes.
+    // Configure empty placeholders here so missing runtime configuration is
+    // reported by requireDatenportalS3 during task execution instead.
+    uploadTask.accessKey = datenportalS3.accessKey ?: ''
+    uploadTask.secretKey = datenportalS3.secretKey ?: ''
+    uploadTask.endpoint = datenportalS3.endpoint ?: ''
+    uploadTask.region = datenportalS3.region ?: ''
+    uploadTask.bucketName = datenportalS3.bucketName ?: ''
+    uploadTask.acl = datenportalS3.acl ?: 'private'
+
+    uploadTask.doFirst {
+        Map<String, Object> config = requireDatenportalS3()
+        uploadTask.accessKey = config.accessKey
+        uploadTask.secretKey = config.secretKey
+        uploadTask.endpoint = config.endpoint
+        uploadTask.region = config.region
+        uploadTask.bucketName = config.bucketName
+        uploadTask.acl = config.acl
+    }
+}
+
+def registerDatenportalS3Upload = { String taskName, Closure taskConfiguration ->
+    if (!hasText(taskName)) {
+        throw new GradleException('An S3 upload task name is required.')
+    }
+
+    Class s3UploadTaskClass = project.buildscript.classLoader.loadClass(
+            'ch.so.agi.gretl.tasks.S3Upload')
+    tasks.register(taskName, s3UploadTaskClass) {
+        if (taskConfiguration != null) {
+            Closure configuration = taskConfiguration.rehydrate(delegate, project, project)
+            configuration.resolveStrategy = Closure.DELEGATE_FIRST
+            configuration.call()
+        }
+        configureDatenportalS3Upload(delegate)
+    }
+}
+
+project.ext.datenportalS3 = datenportalS3
+project.ext.requireDatenportalS3 = requireDatenportalS3
+project.ext.configureDatenportalS3Upload = configureDatenportalS3Upload
+project.ext.registerDatenportalS3Upload = registerDatenportalS3Upload
+
+tasks.register('verifyDatenportalS3Configuration') {
+    group = 'datenportal'
+    description = 'Validates the shared S3 configuration without printing credentials.'
+    doLast {
+        Map<String, Object> config = requireDatenportalS3()
+        logger.lifecycle("S3 endpoint: ${config.endpoint}")
+        logger.lifecycle("S3 region: ${config.region}")
+        logger.lifecycle("S3 bucket: ${config.bucketName}")
+        logger.lifecycle("S3 access key configured: ${hasText(config.accessKey)}")
+        logger.lifecycle("S3 secret key configured: ${hasText(config.secretKey)}")
+        logger.lifecycle("S3 ACL: ${config.acl}")
+    }
+}

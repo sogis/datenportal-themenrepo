@@ -77,6 +77,8 @@ include::jenkinsfile-aufloesung.adoc[leveloffset=+2]
 
 include::gradle-build-vertrag.adoc[leveloffset=+2]
 
+include::s3-upload.adoc[leveloffset=+2]
+
 include::offline-und-java.adoc[leveloffset=+2]
 
 include::gretl-datenportal-job-yaml.adoc[leveloffset=+2]

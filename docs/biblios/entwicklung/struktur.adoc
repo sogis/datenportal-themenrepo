@@ -18,7 +18,8 @@ shared/
 ├── gradle/
 │   ├── gradle-build.properties
 │   ├── init.gradle
-│   └── organisation-common.gradle
+│   ├── organisation-common.gradle
+│   └── datenportal-s3.gradle
 └── data/
     └── offices.xtf
 
@@ -56,6 +57,9 @@ Der Ordner `shared/` enthält repo-weite Vorgaben und gemeinsame Build-Logik.
 
 | `shared/gradle/organisation-common.gradle`
 | Gemeinsame Build-Logik für alle Organisationen. Sie liest Jenkins-/Gradle-Parameter, erkennt Datensätze über ihre `.xtf`-/`.xml`-Metadaten und bindet optional die `dataset.gradle`-Datei des ausgewählten Datensatzes ein.
+
+| `shared/gradle/datenportal-s3.gradle`
+| Zentrale S3-Properties und Hilfsfunktionen für GRETL-S3-Upload-Tasks. Die Datei wird automatisch durch `organisation-common.gradle` eingebunden.
 
 | `shared/gradle/gradle-build.properties`
 | Source of Truth für Plugin-Versionen, Repository-URLs und Offline-Seed-Koordinaten.

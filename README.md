@@ -38,6 +38,10 @@ Der aktuelle Vertrag ist bewusst streng:
 - Der Standardtask `publishToDatenportal` validiert Eingaben und schreibt einen
   Ausführungsreport. Eine fachliche Datenpublikation ist darin noch nicht
   implementiert.
+- Die gemeinsame Datei `shared/gradle/datenportal-s3.gradle` stellt die
+  zentrale S3-Konfiguration und `registerDatenportalS3Upload` für
+  organisationsspezifische Upload-Tasks bereit. Endpoint und Credentials
+  kommen aus der Jenkins-/Gradle-Runtime und werden nicht in Jobs abgelegt.
 - `shared/gradle/gradle-build.properties` bleibt die Source of Truth fuer
   Plugin-Versionen, Repository-URLs und Offline-Seed-Koordinaten.
 
