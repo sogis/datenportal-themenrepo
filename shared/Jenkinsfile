@@ -36,55 +36,47 @@ pipeline {
                         "-Pdataset=${params.DATASET}",
                         "-Pcomment=${params.COMMENT ?: ''}"
                     ]
-                    def metadataPresent = false
-                    def dataPresent = false
+                    withFileParameter(name: 'METADATA_FILE', allowNoFile: true) {
+                        withFileParameter(name: 'DATA_FILE', allowNoFile: true) {
+                            def metadataPresent = false
+                            def dataPresent = false
 
-                    try {
-                        withFileParameter('METADATA_FILE') {
                             if (env.METADATA_FILE) {
                                 metadataPresent = true
                                 gradleArguments << "-PmetadataFile=${env.METADATA_FILE}"
                                 gradleArguments << "-PmetadataFileName=${env.METADATA_FILE_FILENAME ?: 'METADATA_FILE'}"
                             }
-                        }
-                    } catch (ignored) {
-                        echo 'No METADATA_FILE uploaded.'
-                    }
 
-                    try {
-                        withFileParameter('DATA_FILE') {
                             if (env.DATA_FILE) {
                                 dataPresent = true
                                 gradleArguments << "-PdataFile=${env.DATA_FILE}"
                                 gradleArguments << "-PdataFileName=${env.DATA_FILE_FILENAME ?: 'DATA_FILE'}"
                             }
-                        }
-                    } catch (ignored) {
-                        echo 'No DATA_FILE uploaded.'
-                    }
 
-                    if (!metadataPresent && !dataPresent) {
-                        error('Mindestens METADATA_FILE oder DATA_FILE muss hochgeladen werden.')
-                    }
+                            if (!metadataPresent && !dataPresent) {
+                                error('Mindestens METADATA_FILE oder DATA_FILE muss hochgeladen werden.')
+                            }
 
-                    if ((params.SERIES_ID ?: '').trim()) {
-                        gradleArguments << "-PseriesId=${params.SERIES_ID}"
-                    }
+                            if ((params.SERIES_ID ?: '').trim()) {
+                                gradleArguments << "-PseriesId=${params.SERIES_ID}"
+                            }
 
-                    dir(topicRepoDir) {
-                        if (!fileExists('gradlew')) {
-                            error("Gradle wrapper not found in managed topic repository checkout: ${topicRepoDir}")
-                        }
-                        if (!fileExists('shared/bin/gradlew-java17.sh')) {
-                            error("Java-17 Gradle wrapper not found in managed topic repository checkout: ${topicRepoDir}/shared/bin/gradlew-java17.sh")
-                        }
-                        if (!fileExists("${params.ORGANISATION}/build.gradle")) {
-                            error("Organisation '${params.ORGANISATION}' has no build.gradle in ${topicRepoDir}")
-                        }
+                            dir(topicRepoDir) {
+                                if (!fileExists('gradlew')) {
+                                    error("Gradle wrapper not found in managed topic repository checkout: ${topicRepoDir}")
+                                }
+                                if (!fileExists('shared/bin/gradlew-java17.sh')) {
+                                    error("Java-17 Gradle wrapper not found in managed topic repository checkout: ${topicRepoDir}/shared/bin/gradlew-java17.sh")
+                                }
+                                if (!fileExists("${params.ORGANISATION}/build.gradle")) {
+                                    error("Organisation '${params.ORGANISATION}' has no build.gradle in ${topicRepoDir}")
+                                }
 
-                        sh "chmod +x ./gradlew ./shared/bin/gradlew-java17.sh"
-                        sh "./shared/bin/gradlew-java17.sh ${gradleArguments.collect { shellQuote(it) }.join(' ')}"
-                        archiveArtifacts allowEmptyArchive: true, artifacts: "${params.ORGANISATION}/build/reports/datenportal/*.json"
+                                sh "chmod +x ./gradlew ./shared/bin/gradlew-java17.sh"
+                                sh "./shared/bin/gradlew-java17.sh ${gradleArguments.collect { shellQuote(it) }.join(' ')}"
+                                archiveArtifacts allowEmptyArchive: true, artifacts: "${params.ORGANISATION}/build/reports/datenportal/*.json"
+                            }
+                        }
                     }
                 }
             }
