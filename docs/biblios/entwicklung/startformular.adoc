@@ -29,8 +29,17 @@ Das Startformular ist fix. Es wird nicht mehr aus YAML- oder Datensatzkonfigurat
 | Freitextkommentar zur Lieferung.
 
 | `SERIES_ID`
-| Nur sichtbar, wenn das Datenblatt eine `DatasetSeries` beschreibt.
+| Ausgabe innerhalb einer `DatasetSeries`, z. B. `2025`. Das Freitextfeld erscheint bei Auswahl einer Datendatei und ist dann verpflichtend; noch nicht erfasste Ausgaben sind zulässig.
 |===
+
+Beim Entfernen der Datendatei oder Zurücksetzen des Formulars wird die Ausgabe
+geleert, ausgeblendet und deaktiviert. Ohne JavaScript bleibt das Feld
+zugänglich; die bedingte Pflicht wird serverseitig geprüft.
+
+Eine reine Metadatenlieferung aktualisiert das gesamte Datenblatt und benötigt
+keine Ausgabe. Ein dennoch gesetztes `SERIES_ID` wird nicht an Gradle
+weitergereicht. Direkte Gradle-Aufrufe ignorieren `-PseriesId`, wenn
+`-PdataFile` fehlt. Mindestens eine Upload-Datei bleibt erforderlich.
 
 == Keine GUI-Konfiguration im Themenrepo
 

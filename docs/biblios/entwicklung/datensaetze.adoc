@@ -27,7 +27,7 @@ Der Jenkins-Plugin-Scanner und die gemeinsame Gradle-Logik erwarten pro Datensat
 
 == Datensatzserie
 
-Ob im Startformular `SERIES_ID` angezeigt wird, wird aus dem Datenblatt abgeleitet. Das Feld erscheint, wenn die Metadaten im Datenblatt eine Datensatzserie beschreiben, also wenn das Root-Objekt `DatasetSeries` ist.
+Ob im Startformular `SERIES_ID` angezeigt wird, wird aus dem Datenblatt abgeleitet. Das Feld «Ausgabe» erscheint und wird verpflichtend, wenn das Root-Objekt `DatasetSeries` ist und eine Datendatei ausgewählt wurde. Reine Metadatenlieferungen benötigen keine Ausgabe.
 
 == Optionales `dataset.gradle`
 

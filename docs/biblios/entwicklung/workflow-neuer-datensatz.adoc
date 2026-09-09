@@ -47,7 +47,7 @@ Job-Konfiguration, Startformular-Felder, Berechtigungen oder Datensatzerkennung.
 
 == Datensatzserie
 
-Wenn das Datenblatt eine `DatasetSeries` beschreibt, zeigt das fixe Startformular zusätzlich `SERIES_ID` an. Dieses Verhalten wird aus dem Datenblatt abgeleitet und nicht über eine separate YAML-Konfiguration gesetzt.
+Wenn das Datenblatt eine `DatasetSeries` beschreibt, zeigt das fixe Startformular bei Auswahl einer Datendatei zusätzlich das Pflichtfeld «Ausgabe» (`SERIES_ID`) an. Bei reinen Metadatenlieferungen bleibt es ausgeblendet. Dieses Verhalten wird aus dem Datenblatt abgeleitet und nicht über eine separate YAML-Konfiguration gesetzt.
 
 == Häufige Fehler
 

@@ -98,6 +98,19 @@ Nicht geeignet ist `dataset.gradle` für:
 * Organisation-Defaults;
 * die Erkennung oder Validierung von Datensätzen.
 
+== Ausgabe und Lieferungstyp
+
+`-PseriesId` bezeichnet die Ausgabe einer Serie, nicht die Serie selbst.
+Die Serie wird bereits durch `-Pdataset` ausgewählt. Eine Ausgabe ist nur bei
+Datenlieferungen (`-PdataFile`) zu einer `DatasetSeries` erforderlich.
+Bei reinen Metadatenlieferungen wird ein dennoch gesetztes `seriesId` ignoriert:
+Der Kontext, die vorgeschlagenen Argumente und der Ausführungsreport enthalten
+dann eine leere Ausgabe. Mindestens eine Upload-Datei bleibt erforderlich.
+
+Im `datenportalContext` beschreibt `datasetIsSeries` den Typ des Datenthemas.
+`seriesRequired` bezeichnet dagegen die bedingte Ausgabepflicht für den
+aktuellen Lauf: Serie und vorhandene Datendatei.
+
 == GRETL-Auflösung
 
 GRETL wird online über die zentralen Repository-Listen aufgelöst. Für SNAPSHOT-Versionen muss beim Bau des Offline-Bundles mit aktualisierten Abhängigkeiten gerechnet werden. Das Offline-Bundle wird nicht im Themenrepo erzeugt, sondern im Jenkins-/Image-Repo vorbereitet.

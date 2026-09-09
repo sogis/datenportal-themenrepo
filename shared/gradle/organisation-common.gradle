@@ -159,12 +159,14 @@ String metadataFileName = (findProperty('metadataFileName') ?: '').toString().tr
 String dataFile = (findProperty('dataFile') ?: '').toString().trim()
 String dataFileName = (findProperty('dataFileName') ?: '').toString().trim()
 String comment = (findProperty('comment') ?: '').toString()
-String seriesId = (findProperty('seriesId') ?: '').toString().trim()
+// Metadata-only deliveries always address the complete datasheet.
+String seriesId = dataFile ? (findProperty('seriesId') ?: '').toString().trim() : ''
 
 Map<String, Object> selectedDatasetEntry = selectedDataset ? availableDatasets[selectedDataset] : null
 File selectedDatasetDir = selectedDatasetEntry?.dir as File
 def selectedDatasetDefinition = selectedDatasetEntry?.definition
-boolean seriesRequired = selectedDatasetDefinition?.series == true
+boolean datasetIsSeries = selectedDatasetDefinition?.series == true
+boolean seriesRequired = datasetIsSeries && !dataFile.isEmpty()
 
 project.group = 'ch.so.agi.datenportal'
 
@@ -184,6 +186,7 @@ project.ext.datenportalContext = [
         seriesId              : seriesId,
         selectedDatasetDir    : selectedDatasetDir,
         selectedDatasetDef    : selectedDatasetDefinition,
+        datasetIsSeries       : datasetIsSeries,
         seriesRequired        : seriesRequired,
         extraGradleProperties : [:],
         summaryLines          : []
@@ -250,7 +253,7 @@ def validateExecutionContext = {
     }
     if (ctx.seriesRequired && !ctx.seriesId) {
         throw new GradleException(
-                "Dataset '${ctx.selectedDataset}' requires -PseriesId because its metadata describes a DatasetSeries.")
+                "Dataset '${ctx.selectedDataset}' requires -PseriesId (Ausgabe) when supplying data for a DatasetSeries.")
     }
     if (!ctx.metadataFile && !ctx.dataFile) {
         throw new GradleException("At least one of -PmetadataFile or -PdataFile must be supplied.")
@@ -274,6 +277,7 @@ tasks.register('datenportalContext') {
         def printable = [
                 organization          : ctx.organization.id,
                 dataset               : ctx.selectedDataset ?: '',
+                datasetIsSeries       : ctx.datasetIsSeries,
                 seriesRequired        : ctx.seriesRequired,
                 metadataFile          : ctx.metadataFile,
                 metadataFileName      : ctx.metadataFileName,

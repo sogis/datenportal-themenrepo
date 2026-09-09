@@ -57,7 +57,7 @@ pipeline {
                                 error('Mindestens METADATA_FILE oder DATA_FILE muss hochgeladen werden.')
                             }
 
-                            if ((params.SERIES_ID ?: '').trim()) {
+                            if (dataPresent && (params.SERIES_ID ?: '').trim()) {
                                 gradleArguments << "-PseriesId=${params.SERIES_ID}"
                             }
 
