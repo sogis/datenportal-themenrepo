@@ -114,3 +114,7 @@ aktuellen Lauf: Serie und vorhandene Datendatei.
 == GRETL-Auflösung
 
 GRETL wird online über die zentralen Repository-Listen aufgelöst. Für SNAPSHOT-Versionen muss beim Bau des Offline-Bundles mit aktualisierten Abhängigkeiten gerechnet werden. Das Offline-Bundle wird nicht im Themenrepo erzeugt, sondern im Jenkins-/Image-Repo vorbereitet.
+
+== Lieferverarbeitung
+
+Der Standardtask und die Git-Parameter sind in xref:lieferverarbeitung.adoc[SQL-basierte Lieferverarbeitung] beschrieben.

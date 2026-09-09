@@ -35,9 +35,10 @@ Der aktuelle Vertrag ist bewusst streng:
 - Ein Datensatz ist ein Unterordner mit genau einer `.xtf`- oder `.xml`-Datei.
 - `permissions.read` und `permissions.build` referenzieren Teams aus
   `shared/gretl-datenportal-teams.yaml`.
-- Der Standardtask `publishToDatenportal` validiert Eingaben und schreibt einen
-  Ausführungsreport. Eine fachliche Datenpublikation ist darin noch nicht
-  implementiert.
+- Der Standardtask `publishToDatenportal` bereitet Lieferungen mit GRETL und
+  SQL vor und schreibt bei ausdrücklicher Freigabe Datenblatt und vollständigen
+  Katalog ins Git-Repository zurück. S3-Upload und Reload sind noch nicht angebunden.
+  Details: [SQL-Lieferverarbeitung](docs/biblios/entwicklung/lieferverarbeitung.adoc).
 - Die gemeinsame Datei `shared/gradle/datenportal-s3.gradle` stellt die
   zentrale S3-Konfiguration und `registerDatenportalS3Upload` für
   organisationsspezifische Upload-Tasks bereit. Endpoint und Credentials

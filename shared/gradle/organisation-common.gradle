@@ -303,36 +303,6 @@ tasks.register('verifyPluginSetup') {
     }
 }
 
-tasks.register('publishToDatenportal') {
-    group = 'datenportal'
-    description = 'Resolves the current organisation/dataset context and writes an example execution summary.'
-    doLast {
-        validateExecutionContext()
-
-        Map<String, Object> ctx = project.ext.datenportalContext as Map<String, Object>
-        def summary = [
-                organization          : ctx.organization.id,
-                dataset               : ctx.selectedDataset,
-                datasetTitle          : ctx.selectedDatasetDef?.title ?: '',
-                seriesId              : ctx.seriesId,
-                metadataFile          : ctx.metadataFile,
-                metadataFileName      : ctx.metadataFileName,
-                dataFile              : ctx.dataFile,
-                dataFileName          : ctx.dataFileName,
-                comment               : ctx.comment,
-                extraGradleProperties : ctx.extraGradleProperties,
-                suggestedCommand      : buildGradleArguments(),
-                summaryLines          : ctx.summaryLines
-        ]
-
-        File summaryFile = layout.buildDirectory
-                .file("reports/datenportal/${project.name}-${ctx.selectedDataset}.json")
-                .get()
-                .asFile
-        summaryFile.parentFile.mkdirs()
-        summaryFile.text = JsonOutput.prettyPrint(JsonOutput.toJson(summary)) + System.lineSeparator()
-
-        logger.lifecycle("Wrote example execution summary to ${summaryFile}")
-        logger.lifecycle("Resolved Gradle arguments: ${buildGradleArguments().join(' ')}")
-    }
-}
+project.ext.validateDatenportalExecution = validateExecutionContext
+project.ext.parseDatenportalDefinition = { File source -> parseDatasetDefinition(source) }
+apply from: new File(sharedGradleDir, 'datenportal-publication.gradle')

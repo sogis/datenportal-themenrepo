@@ -1,0 +1,85 @@
+import javax.inject.Inject
+import org.gradle.process.ExecOperations
+import groovy.json.JsonOutput
+
+abstract class DatenportalGitCommands {
+    @Inject abstract ExecOperations getExecOperations()
+    Map run(File directory, List<String> arguments, boolean allowDifference=false) {
+        def output=new ByteArrayOutputStream()
+        def result=execOperations.exec {
+            workingDir directory
+            commandLine(['git']+arguments)
+            environment 'GIT_TERMINAL_PROMPT','0'
+            standardOutput output; errorOutput output
+            ignoreExitValue true
+        }
+        if (result.exitValue!=0 && !(allowDifference && result.exitValue==1)) {
+            throw new GradleException('Git operation failed: '+arguments[0]+' (exit '+result.exitValue+')\n'+output.toString('UTF-8'))
+        }
+        [code:result.exitValue,text:output.toString('UTF-8')]
+    }
+}
+def git=objects.newInstance(DatenportalGitCommands)
+def root=project.projectDir.parentFile
+def publication=project.ext.datenportalPublication
+def propertyText={ String name -> (findProperty(name) ?: '').toString().trim() }
+def requestedWrite=propertyText('gitWriteBack')=='true'
+def repositoryMode=propertyText('topicRepositoryMode') ?: 'working-tree'
+publication.report.baseRevision=propertyText('gitBaseRevision') ?: null
+publication.report.resultRevision=null
+tasks.register('commitAndPushMetadata') {
+    dependsOn 'preparePublication'
+    doLast {
+        def changes=[(publication.targetRelative):publication.candidateSheet]
+        if (publication.candidateCatalog.isFile()) changes['shared/data/published-catalog.xtf']=publication.candidateCatalog
+        def diff=new StringBuilder()
+        changes.each { relative, candidate ->
+            File original=new File(root,relative)
+            diff.append(git.run(root,['diff','--no-index','--',original.isFile() ? original.path : '/dev/null',candidate.path],true).text)
+        }
+        new File(publication.outputs,'metadata.patch').text=diff.toString()
+        if (repositoryMode=='working-tree' && requestedWrite) throw new GradleException('Git write-back is forbidden in working-tree mode.')
+        if (requestedWrite) {
+            if (repositoryMode!='managed-git') throw new GradleException('Git write-back requires managed-git mode.')
+            def branch=propertyText('topicRepositoryBranch')
+            def remote=propertyText('topicRepositoryUrl')
+            def baseline=propertyText('gitBaseRevision')
+            def authorName=propertyText('gitCommitterName')
+            def authorEmail=propertyText('gitCommitterEmail')
+            if (![branch,remote,baseline,authorName,authorEmail].every { it }) throw new GradleException('Git write-back context is incomplete.')
+            if (System.getenv('JENKINS_RUNTIME_MODE')=='dev' && !remote.startsWith('file://')) throw new GradleException('Dev runtime may only push to a local test repository.')
+            def remoteUri=new URI(remote)
+            if (!(remoteUri.scheme in ['https','file']) || remoteUri.userInfo!=null) throw new GradleException('Git remote must use HTTPS or file without embedded credentials.')
+            git.run(root,['check-ref-format','--branch',branch])
+            if (git.run(root,['status','--porcelain']).text.trim()) throw new GradleException('Git checkout is not clean.')
+            if (git.run(root,['rev-parse','HEAD']).text.trim()!=baseline) throw new GradleException('Unexpected Git baseline revision.')
+            if (git.run(root,['remote','get-url','origin']).text.trim()!=remote || git.run(root,['remote','get-url','--push','origin']).text.trim()!=remote)
+                throw new GradleException('Unexpected Git remote.')
+            def currentBranch=git.run(root,['symbolic-ref','--short','HEAD']).text.trim()
+            if (currentBranch!=branch) throw new GradleException('Unexpected Git branch.')
+            def remoteHead=git.run(root,['ls-remote','--exit-code','origin','refs/heads/'+branch]).text.tokenize()[0]
+            if (remoteHead!=baseline) throw new GradleException('Remote changed during preparation; retry on the new revision.')
+            changes.each { relative,candidate ->
+                File destination=new File(root,relative)
+                if (!destination.canonicalPath.startsWith(root.canonicalPath+File.separator)) throw new GradleException('Git target escapes checkout.')
+                destination.parentFile.mkdirs()
+                destination.bytes=candidate.bytes
+            }
+            git.run(root,['add','--']+changes.keySet().toList())
+            def staged=git.run(root,['diff','--cached','--name-only','-z']).text.split('\u0000').findAll { it }
+            if (!changes.keySet().containsAll(staged)) throw new GradleException('Unexpected files staged for commit.')
+            publication.report.baseRevision=baseline
+            if (staged) {
+                git.run(root,['diff','--cached','--check'])
+                File message=new File(publication.workDir,'commit-message.txt')
+                message.text="data: ${publication.report.dataset}"+(publication.report.issue ? " / ${publication.report.issue}" : '')+'\n\n'+
+                    'Delivery: '+(System.getenv('BUILD_TAG') ?: 'local')+'\nBuild: '+(System.getenv('BUILD_URL') ?: 'local')+'\n'
+                git.run(root,['-c','user.name='+authorName,'-c','user.email='+authorEmail,'commit','--file',message.path])
+                git.run(root,['push','origin','HEAD:refs/heads/'+branch])
+            }
+            publication.report.resultRevision=git.run(root,['rev-parse','HEAD']).text.trim()
+            publication.report.mode='accepted'
+        }
+        new File(publication.outputs,'report.json').text=JsonOutput.prettyPrint(JsonOutput.toJson(publication.report))+'\n'
+    }
+}
