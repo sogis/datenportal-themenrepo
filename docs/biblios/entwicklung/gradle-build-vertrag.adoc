@@ -131,4 +131,9 @@ GRETL wird online über die zentralen Repository-Listen aufgelöst. Für SNAPSHO
 
 == Lieferverarbeitung
 
+Der Standardablauf steht als konkrete Download-, Copy-, GRETL- und Upload-Tasks
+in `shared/gradle/datenportal-publication.gradle`; die fachliche Verarbeitung
+liegt unter `shared/sql/publication/`. Root-Initialisierung und Git-CLI haben
+je einen eigenen kleinen Skriptteil.
+
 Der Standardtask und die Git-Parameter sind in xref:lieferverarbeitung.adoc[SQL-basierte Lieferverarbeitung] beschrieben.

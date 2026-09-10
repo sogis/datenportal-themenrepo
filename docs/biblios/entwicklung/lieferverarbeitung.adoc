@@ -35,18 +35,30 @@ oder automatisch nachgeführt; er kann ausdrücklich als Initialquelle dienen.
 optionalen Reload in einem Gradle-Aufruf aus. `preparePublication` erzeugt nur
 die geprüften lokalen Ergebnisse, auch wenn `s3Publish=true` konfiguriert ist.
 
-. Arbeitsverzeichnis vorbereiten; Uploads mit `Copy` bereitstellen.
-. Verweis und Gesamt-XTF mit dem vorhandenen `Download`-Plugin herunterladen.
-. XTF validieren und in getrennte Schemas einer neuen temporären DuckDB importieren.
-. Ausgewählte Metadaten mit `merge-datasheets.sql` zusammenführen.
-. CSV gegebenenfalls prüfen und nach XLSX/Parquet konvertieren.
-. `assemble.sql` führt Katalog, technische Angaben und Ämter zusammen.
-. Gesamtdateien und ausgewähltes Datenblatt exportieren und validieren.
-. Bei Publikationsfreigabe Datenexporte und neue XTF-Versionen hochladen.
-. Neue Gesamt-XTF öffentlich zurücklesen und byteweise vergleichen.
+Der normale Ablauf steht vollständig in
+`shared/gradle/datenportal-publication.gradle`. Er besteht aus konkret
+benannten Tasks mit direkten Abhängigkeiten:
+
+. Eingaben prüfen und Arbeitsverzeichnis vorbereiten.
+. Verweis und Gesamt-XTF mit `Download` herunterladen; lokale Offline-Fixtures mit `Copy` übernehmen.
+. Ausgewählte Uploads beziehungsweise das Repository-Datenblatt mit `Copy` bereitstellen.
+. Eingangs-XTF mit `IliValidator` prüfen und mit `Ili2duckdbImportSchema` / `Ili2duckdbImport` importieren.
+. `mergeDatasheets` führt `parameters.sql`, `merge-datasheets.sql` und `delivery.sql` aus.
+. CSV gegebenenfalls mit `CsvValidator` prüfen; `convertDeliveredCsv` erzeugt die typisierten Daten und XLSX/Parquet.
+. `copyDataExports` stellt die Datenexporte unter ihren vorgesehenen Dateinamen bereit.
+. `assemblePublication` führt `assemble.sql` und `result.sql` aus und erzeugt den vollständigen Ergebnisstand.
+. Gesamt-XTF und ausgewähltes Datenblatt mit `Ili2duckdbExport` exportieren und mit `IliValidator` validieren.
+. Diff und Vorschauergebnis erzeugen; Veröffentlichungskandidaten mit `Copy` bereitstellen.
+. Bei Publikationsfreigabe S3-/Reload-Konfiguration prüfen und Datenexporte sowie neue Gesamt-XTF mit `S3Upload` hochladen.
+. Neue Gesamt-XTF mit `Download` öffentlich zurücklesen und byteweise vergleichen.
 . Bei zusätzlicher Git-Freigabe das ausgewählte Datenblatt committen/pushen.
-. `current.json` zuletzt hochladen und die Übernahme zurücklesen.
+. `current.json` zuletzt mit `S3Upload` hochladen und die Übernahme zurücklesen.
 . Optional das Portal mit GRETL `Curl` neu laden.
+
+`shared/gradle/datenportal-initialize.gradle` ergänzt ausschliesslich den
+administrativen Eingangsablauf: Repository-Datenblätter sammeln, validieren
+und importieren. Danach gelten dieselben SQL-, Export- und Publikationstasks.
+Die Git-CLI-Anbindung bleibt in `shared/gradle/datenportal-git.gradle`.
 
 Die Schemas `repository`, `incoming`, `sheets`, `offices`, `previous`,
 `csv_input`/`data`, `runtime`, `merge_work`, `work` und `candidate` trennen
@@ -58,6 +70,34 @@ Die Abbildung bleibt an `shared/gradle/publication-models.json` gebunden.
 Normale Jobs lesen nur das ausgewählte Repository-Datenblatt zusätzlich zum
 Gesamtstand; die organisationsübergreifende Suche bleibt der Initialisierung
 vorbehalten. Die DuckDB wird nicht als dauerhafter Zustand weitergeführt.
+
+=== SQL, Prüfungen und Exportformat
+
+Gradle übergibt lokale, nicht geheime Laufparameter und die zentrale
+Publikationskonfiguration an SQL. SQL bestimmt das wirksame Modell, die
+Attribute, Typkonvertierungen, Pflichtwertprüfungen, Dateinamen und Kennzahlen.
+Eigene JDBC-Abfragen und fachliche SQL-Erzeugung in Groovy gibt es nicht.
+
+`delivery.json` enthält das von SQL bestimmte Modell, die Dateinamen und den
+Konvertierungs-SQL-Text. Ein kurzer Task schreibt diesen Text unverändert nach
+`convert.sql`; der folgende `DuckDbSqlExecutor` führt ihn aus. `result.json`
+enthält Kennzahlen und die Angabe, ob ein Katalog exportiert werden kann.
+Diese Dateien sowie `parameters.json` und `mappings.json` liegen nur im
+Arbeitsverzeichnis. Kein Folgelauf verwendet sie als
+Zustandsquelle. XLSX und Parquet werden weiterhin anhand der beschriebenen
+Attribute typisiert; ohne Attribute bleiben die CSV-Spalten Text.
+
+Die Eingangsprüfung kontrolliert Aufrufparameter und Dateien. Modellprüfungen
+übernehmen `IliValidator` und `CsvValidator`; zusätzliche fachliche Konsistenz
+prüft SQL. Import-, Export- und Übertragungsfehler behandeln die jeweiligen
+Tasks. Manifest- und Git-Prüfungen sichern die Übernahme ab.
+
+Die exportierten XTF werden ohne XML-Nachbearbeitung verwendet. Präfixe,
+Einrückung und Serialisierung bestimmt der Exporter. Daher können Git-Diffs
+auch Formatierungsänderungen enthalten. Roundtrip-Tests prüfen fachlichen
+Inhalt, Reihenfolge und Kennungen statt Bytegleichheit zwischen zwei neuen
+Exporten. Der Vergleich des Uploadkandidaten mit seinem öffentlichen Rücklesen
+bleibt dagegen bytegenau.
 
 == Verarbeitung auswählen
 

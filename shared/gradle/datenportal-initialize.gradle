@@ -1,0 +1,41 @@
+// Applied scripts use the same resolved plugin classpath as the project.
+buildscript { dependencies { classpath files(project.buildscript.configurations.classpath) } }
+import ch.so.agi.gretl.tasks.Ili2duckdbImport
+import ch.so.agi.gretl.tasks.IliValidator
+
+// Administrative input only. Normal deliveries never enumerate the repository.
+def root=project.ext.publicationRoot
+def work=project.ext.publicationWorkDir
+def models=System.getenv('DATENPORTAL_MODELS_DIR') ?: new File(root,'shared/models').path
+def sheets=fileTree(root) { include '*/*/*' }.filter { f ->
+    f.name.toLowerCase() ==~ /.*\.(xtf|xml)$/ && f.parentFile.name.contains('.') &&
+    f.parentFile.name ==~ /^[A-Za-z0-9][A-Za-z0-9_.-]*$/ &&
+    new File(f.parentFile.parentFile,'gretl-datenportal-job.yaml').isFile()
+}
+def orderedSheets=providers.provider { sheets.files.sort { root.toPath().relativize(it.toPath()).toString() } }
+tasks.register('collectInitialSheets') {
+    dependsOn 'preparePublicationWorkspace'
+    doLast {
+        root.eachDir { org ->
+            if (new File(org,'gretl-datenportal-job.yaml').isFile()) org.eachDir { topic ->
+                if (topic.name.contains('.') && topic.name ==~ /^[A-Za-z0-9][A-Za-z0-9_.-]*$/ &&
+                    sheets.files.count { it.parentFile==topic }!=1)
+                    throw new GradleException("Expected one datasheet in ${topic}")
+            }
+        }
+        if (sheets.isEmpty()) throw new GradleException('No repository datasheets for initialization.')
+        project.ext.publicationReport.sourceFiles=orderedSheets.get().collect { root.toPath().relativize(it.toPath()).toString() }
+    }
+}
+tasks.register('validateInitialSheets', IliValidator) {
+    dependsOn 'collectInitialSheets'; dataFiles orderedSheets
+    modelDirectories models; logFile new File(work,'validateInitialSheets.log')
+}
+tasks.register('importInitialSheets', Ili2duckdbImport) {
+    dependsOn 'importPreviousSheets','validateInitialSheets'
+    databaseFile new File(work,'publication.duckdb'); modelDirectories models
+    getOutputs().upToDateWhen { false }
+    schema 'repository'; modelNames 'SO_AGI_DataCatalog_Datasheet_20260523'
+    transferFiles orderedSheets
+    getDatasetNames().set(orderedSheets.map { files -> (0..<files.size()).collect { "sheet_${it}".toString() } })
+}
