@@ -1,0 +1,97 @@
+import groovy.json.JsonOutput
+import groovy.json.JsonSlurper
+
+def p=project.ext.datenportalPublication
+def report=p.report
+def downloadType=project.buildscript.classLoader.loadClass('de.undercouch.gradle.tasks.download.Download')
+def staged=tasks.register('stagePublication',Copy) {
+    dependsOn 'preparePublication'
+    into p.releaseDir
+    from(new File(p.outputs,'datasheets.xtf')) { rename { "datasheets-${p.releaseId}.xtf" } }
+    from(p.candidateCatalog) { rename { "published-catalog-${p.releaseId}.xtf" } }
+    doLast {
+        p.nextManifest=[schemaVersion:1,releaseId:p.releaseId,datasheets:"datasheets-${p.releaseId}.xtf".toString(),
+            catalog:p.candidateCatalog.isFile() ? "published-catalog-${p.releaseId}.xtf".toString() : null]
+        new File(p.outputs,'current.json').text=JsonOutput.prettyPrint(JsonOutput.toJson(p.nextManifest))+'\n'
+    }
+}
+def dataUpload=project.ext.registerDatenportalS3Upload('uploadDataExports') {
+    dependsOn staged
+    sourceFiles fileTree(p.outputs) { include '*.csv','*.xlsx','*.parquet' }
+    onlyIf { p.publish && !!project.ext.datenportalContext.dataFile }
+    outputs.upToDateWhen { false }
+}
+def xtfUpload=project.ext.registerDatenportalS3Upload('uploadPublicationFiles') {
+    dependsOn dataUpload
+    sourceDir p.releaseDir
+    contentType 'application/xml'
+    onlyIf { p.publish }
+    outputs.upToDateWhen { false }
+    doLast { report.publication='candidates-uploaded'; project.ext.writePublicationReport() }
+}
+def candidateDownloads=[]
+['datasheets','catalog'].each { key ->
+    candidateDownloads << tasks.register('downloadCandidate'+key.capitalize(),downloadType) {
+        dependsOn xtfUpload
+        src { p.nextManifest?.get(key) ? URI.create(p.manifestUrl).resolve(p.nextManifest[key]).toString() : [] }
+        dest new File(p.workDir,'readback/'+key+'.xtf')
+        overwrite true; tempAndMove true; compress false
+        header 'Accept-Encoding','identity'
+        retries 3
+        outputs.upToDateWhen { false }
+        setOnlyIf { p.publish && p.nextManifest[key]!=null }
+    }
+}
+def verify=tasks.register('verifyPublicationCandidates') {
+    dependsOn candidateDownloads
+    onlyIf { p.publish }
+    doLast {
+        ['datasheets','catalog'].findAll { p.nextManifest[it]!=null }.each { key ->
+            if (new File(p.releaseDir,p.nextManifest[key]).bytes != new File(p.workDir,'readback/'+key+'.xtf').bytes)
+                throw new GradleException('Public XTF readback differs: '+key)
+        }
+    }
+}
+tasks.named('commitAndPushMetadata') { dependsOn verify }
+def pointer=project.ext.registerDatenportalS3Upload('uploadCurrentManifest') {
+    dependsOn 'commitAndPushMetadata'
+    sourceFile new File(p.outputs,'current.json')
+    contentType 'application/json'
+    onlyIf { p.publish }
+    outputs.upToDateWhen { false }
+    doFirst {
+        def response=project.ext.readPublicationPointer()
+        if (p.bootstrap ? response.status!=404 : response.status!=200 || project.ext.validatePublicationManifest(new JsonSlurper().parseText(response.body))!=p.current)
+            throw new GradleException('Publication baseline changed; current.json was not overwritten.')
+        report.pointerAttempted=true
+        report.publication='unknown'
+        project.ext.writePublicationReport()
+    }
+    doLast {
+        def response=project.ext.readPublicationPointer()
+        if (response.status!=200 || project.ext.validatePublicationManifest(new JsonSlurper().parseText(response.body))!=p.nextManifest)
+            throw new GradleException('Could not confirm current.json publication.')
+        report.publication='accepted'; report.mode='accepted'
+        project.ext.writePublicationReport()
+    }
+}
+def reload=tasks.register('reloadPortal',project.buildscript.classLoader.loadClass('ch.so.agi.gretl.tasks.Curl')) {
+    dependsOn pointer
+    serverUrl (findProperty('portalReloadUrl') ?: 'http://invalid.invalid/admin/catalog/reload').toString()
+    method 'POST'
+    expectedStatusCode 200
+    headers(['X-Reload-Token':(findProperty('portalReloadToken') ?: '').toString()])
+    outputFile new File(p.outputs,'reload-response.json')
+    onlyIf { p.publish && (findProperty('reloadPortal') ?: 'false').toString()=='true' }
+    doFirst { report.reload='failed'; project.ext.writePublicationReport() }
+    doLast {
+        def response=new JsonSlurper().parse(new File(p.outputs,'reload-response.json'))
+        if (response.success!=true) throw new GradleException('Portal did not confirm successful reload.')
+        report.reload='succeeded'; project.ext.writePublicationReport()
+    }
+}
+tasks.register('publishToDatenportal') {
+    dependsOn reload
+    group='datenportal'
+    description='Prepares a delivery, optionally publishes its XTF generation to S3 and reloads the portal.'
+}

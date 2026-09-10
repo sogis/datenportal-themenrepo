@@ -29,11 +29,14 @@ pipeline {
             steps {
                 script {
                     lock(resource: 'datenportal-topic-repository') {
+                        def mode = params.PUBLICATION_MODE ?: 'delivery'
+                        if (!(mode in ['delivery', 'repository-metadata'])) error('Unbekannter Verarbeitungsmodus.')
                         def repository = prepareDatenportalWorkspace()
                         def topicRepoDir = repository.path
                         def gradleArguments = [
-                            '--offline', '--no-daemon', '-I', "${topicRepoDir}/shared/gradle/init.gradle",
+                            '--no-daemon', '-I', "${topicRepoDir}/shared/gradle/init.gradle",
                             '-p', params.ORGANISATION, '@@GRADLE_TASK@@',
+                            "-PpublicationMode=${mode}", "-PreloadPortal=${params.RELOAD_PORTAL ?: false}",
                             "-Pdataset=${params.DATASET}", "-Pcomment=${params.COMMENT ?: ''}",
                             "-PtopicRepositoryMode=${repository.mode}",
                             "-PtopicRepositoryUrl=${repository.url}",
@@ -45,7 +48,10 @@ pipeline {
                         ]
                         withFileParameter(name: 'METADATA_FILE', allowNoFile: true) {
                             withFileParameter(name: 'DATA_FILE', allowNoFile: true) {
-                                if (!env.METADATA_FILE && !env.DATA_FILE) {
+                                if (mode == 'repository-metadata' && (env.METADATA_FILE || env.DATA_FILE)) {
+                                    error('Repository-Abgleich akzeptiert keine Uploads.')
+                                }
+                                if (mode == 'delivery' && !env.METADATA_FILE && !env.DATA_FILE) {
                                     error('Mindestens METADATA_FILE oder DATA_FILE muss hochgeladen werden.')
                                 }
                                 if (env.METADATA_FILE) {
@@ -72,7 +78,7 @@ pipeline {
                                             runDelivery()
                                         }
                                     } finally {
-                                        archiveArtifacts allowEmptyArchive: true, artifacts: "${params.ORGANISATION}/build/publication/outputs/**,${params.ORGANISATION}/build/publication/*.log"
+                                        archiveArtifacts allowEmptyArchive: true, artifacts: "${params.ORGANISATION}/build/publication/outputs/**,${params.ORGANISATION}/build/publication/release/**,${params.ORGANISATION}/build/publication/*.log"
                                     }
                                 }
                             }

@@ -1,121 +1,188 @@
-= SQL-basierte Lieferverarbeitung
+= Gesamt-XTF und Lieferverarbeitung über S3
 :page-layout: docs
 
-== Ablauf und gespeicherter Zustand
+== Angenommener Stand
 
-`publishToDatenportal` ruft in einem Gradle-Lauf `preparePublication` und danach
-`commitAndPushMetadata` auf. Die Vorbereitung verwendet eine neue DuckDB unter
-`<organisation>/build/publication/`. Sie ist ein Arbeitsartefakt. Ausschliesslich
-`shared/data/published-catalog.xtf` speichert angenommene technische Datenlieferungen.
-Eine zusätzliche Zustandsdatei wird nicht verwendet.
+`current.json` im öffentlichen Bucket bezeichnet den letzten angenommenen
+Gesamtstand. Er wird einmal je Lauf geladen. Seine einfachen Dateinamen werden
+relativ zur Manifestadresse aufgelöst; fremde URLs, Pfadwechsel, unbekannte
+Versionen und unvollständige Verweise sind Fehler.
 
-Die Datenbank trennt `repository` (ursprüngliche Datenblätter), `incoming`
-(Metadatenlieferung), `sheets` (zusammengeführte Datenblätter), `offices`, `previous`
-(bisheriger Katalog), `csv_input`/`data` (CSV), `runtime` (Laufparameter), `work`
-(SQL-Zwischenergebnisse) und `candidate` (neuer Katalog).
-`Ili2duckdbImportSchema`, `Ili2duckdbImport`, `DuckDbSqlExecutor` und
-`Ili2duckdbExport` bilden den Ablauf. Die relationale Abbildung ist an die
-Modellrevision in `shared/gradle/publication-models.json` gebunden.
+[source,json]
+----
+{
+  "schemaVersion": 1,
+  "releaseId": "beispiel-123",
+  "datasheets": "datasheets-beispiel-123.xtf",
+  "catalog": "published-catalog-beispiel-123.xtf"
+}
+----
 
-Die zentrale SQL-Datei `shared/sql/publication/assemble.sql` führt Metadaten,
-Ämter und technischen Bestand zusammen. Sämtliche Repository-Datenblätter werden
-validiert; ein ungültiges vorhandenes Datenblatt oder ein beschädigter Katalog
-führt zum Fehler. Ein fehlender Katalog bedeutet Erstinitialisierung.
+`releaseId` besteht aus 1–128 ASCII-Buchstaben, Ziffern, Bindestrichen oder
+Unterstrichen und beginnt alphanumerisch. Die beiden Dateinamen müssen genau
+dieser Kennung entsprechen. `catalog` darf ausdrücklich `null` sein, solange
+noch kein vollständiger Katalog vorliegt. Fehlende Dateien und beschädigte
+XTF werden nicht als leerer Ausgangsstand behandelt.
 
-== Lieferungstypen
+Die beiden XTF sind die fachliche und technische Zustandsquelle. Der Verweis
+enthält keine Lieferinformationen. Ein eventuell noch in Git liegender
+`shared/data/published-catalog.xtf` wird im Normalbetrieb nicht mehr gelesen
+oder automatisch nachgeführt; er kann ausdrücklich als Initialquelle dienen.
 
-* Metadaten ohne CSV ersetzen das ausgewählte fachliche Datenblatt.
-  Technische Datumswerte, Distributionen und Strukturkennzahlen bleiben erhalten.
-  Ein mitgesendetes `seriesId` wird ignoriert. Es erfolgt keine Datenkonvertierung.
-* Eine CSV verwendet das vorhandene oder gleichzeitig gelieferte Datenblatt.
-  Nichtleere, eindeutige Spaltennamen sowie die deklarierte Spaltenstruktur und Datentypen werden geprüft; ein gesetztes
-  INTERLIS-Modell wird zusätzlich mit `CsvValidator` geprüft. Ein fehlendes Modell
-  ist ein Fehler. CSV bleibt unverändert; XLSX und Parquet entstehen aus den
-  typisierten Daten. Der Annahmetag wird einmal pro Lauf in `Europe/Zurich` bestimmt.
-* `modified` wird bei Datenlieferungen auf diesen Tag gesetzt. Ein fehlendes
-  `issued` wird gesetzt und danach erhalten. Bei Serien werden die Serie und
-  die ausgewählte Ausgabe nachgeführt; andere Ausgaben bleiben unverändert.
-* Ohne jede Upload-Datei ist der Start unzulässig.
+== Task-Ablauf
 
-`seriesId` ist Freitext und bezeichnet die Ausgabe innerhalb des mit `dataset`
-gewählten Themas. Für Serien mit CSV ist die Ausgabe obligatorisch. Das
-Katalogmodell begrenzt die Bezeichnung auf 100 Zeichen.
+`publishToDatenportal` führt Vorbereitung, optionale Veröffentlichung und
+optionalen Reload in einem Gradle-Aufruf aus. `preparePublication` erzeugt nur
+die geprüften lokalen Ergebnisse, auch wenn `s3Publish=true` konfiguriert ist.
 
-Eine unbekannte Ausgabe wird aus Serienangaben technisch aufgebaut, mit
-`in_review` und `isCurrentIssue=false` gespeichert und nicht dem fachlichen
-Datenblatt hinzugefügt. Ihre vorläufige Kennung wird aus Themenkennung und einem
-Hash der Bezeichnung gebildet. Trifft später ein Datenblatt mit passendem Paar
-Serienkennung/Ausgabebezeichnung ein, ersetzt dessen Kennung die vorläufige.
-Technische Angaben und bestehende Dateinamen bleiben erhalten.
+. Arbeitsverzeichnis vorbereiten; Uploads mit `Copy` bereitstellen.
+. Verweis und Gesamt-XTF mit dem vorhandenen `Download`-Plugin herunterladen.
+. XTF validieren und in getrennte Schemas einer neuen temporären DuckDB importieren.
+. Ausgewählte Metadaten mit `merge-datasheets.sql` zusammenführen.
+. CSV gegebenenfalls prüfen und nach XLSX/Parquet konvertieren.
+. `assemble.sql` führt Katalog, technische Angaben und Ämter zusammen.
+. Gesamtdateien und ausgewähltes Datenblatt exportieren und validieren.
+. Bei Publikationsfreigabe Datenexporte und neue XTF-Versionen hochladen.
+. Neue Gesamt-XTF öffentlich zurücklesen und byteweise vergleichen.
+. Bei zusätzlicher Git-Freigabe das ausgewählte Datenblatt committen/pushen.
+. `current.json` zuletzt hochladen und die Übernahme zurücklesen.
+. Optional das Portal mit GRETL `Curl` neu laden.
 
-Das aktuelle Datenblatt bestimmt die Freigabe. Entfernte Einträge bleiben mit
-`in_review` im vollständigen Katalog; ein alter Status `published` genügt nicht.
-Die Webapp filtert diese vollständige Datei beim Aufbau ihrer öffentlichen Sicht.
-Nicht freigegebene Einträge bleiben in der Katalogdatei technisch lesbar.
+Die Schemas `repository`, `incoming`, `sheets`, `offices`, `previous`,
+`csv_input`/`data`, `runtime`, `merge_work`, `work` und `candidate` trennen
+Quellen, Arbeitsdaten und Ergebnisse. `Ili2duckdbImportSchema`,
+`Ili2duckdbImport`, `DuckDbSqlExecutor`, `Ili2duckdbExport`, `IliValidator`,
+`CsvValidator`, `Copy` und `S3Upload` übernehmen die einzelnen Schritte.
+Die Abbildung bleibt an `shared/gradle/publication-models.json` gebunden.
 
-== Ergebnisse und Konfiguration
+Normale Jobs lesen nur das ausgewählte Repository-Datenblatt zusätzlich zum
+Gesamtstand; die organisationsübergreifende Suche bleibt der Initialisierung
+vorbehalten. Die DuckDB wird nicht als dauerhafter Zustand weitergeführt.
 
-`build/publication/outputs/` enthält:
+== Verarbeitung auswählen
 
-* das ausgewählte Datenblatt unter `metadata/<bisheriger Dateiname>`;
-* `datasheets.xtf` aus sämtlichen aktuellen Datenblättern;
-* genau einen vollständigen `published-catalog.xtf`, sobald Daten vorhanden sind;
-* bei CSV-Lieferungen CSV, XLSX und Parquet mit flachen Dateinamen;
-* `metadata.patch` und `report.json`.
+[cols="1,3",options="header"]
+|===
+|`publicationMode` |Verhalten
+|`delivery` (Default) |Mindestens Metadaten-XTF/XML oder CSV erforderlich.
+|`repository-metadata` |Keine Uploads; ausgewähltes Datenblatt aus dem Build-Checkout übernehmen.
+|===
 
-Ohne Datenbestand erzeugt eine reine Metadatenlieferung keinen leeren Katalog.
-Die XML-Ausgabe erhält feste Namespace-Präfixe und stabile Basket-Kennungen,
-damit Wiederholungen keine zufälligen XML-Diffs erzeugen.
-Validierungsprotokolle liegen unmittelbar unter `build/publication/`.
-Uploads werden unverändert unter `input/datasheet.xtf` und `input/data.csv`
-zwischengespeichert, weil Jenkins-Stash-Pfade keine Dateiendung tragen.
-Bei direkten Aufrufen müssen Eingaben ausserhalb von `build/publication/` liegen.
+Im Jenkins-Formular heissen die Varianten «Lieferung verarbeiten» und
+«Datenblatt aus Repository übernehmen» (`PUBLICATION_MODE`). Im zweiten Modus
+werden Uploadfelder und Ausgabe geleert und deaktiviert; technisch mitgesendete
+Uploads werden abgewiesen. Ein einzelnes in Git geändertes Datenblatt wird so
+gezielt in Sammlung und Katalog übernommen. YAML- und Jobdefinitionsänderungen
+benötigen weiterhin einen Seeder-Lauf.
 
-`shared/publication.properties` definiert Publisher, Basis- und Download-URLs
-sowie die URI-Zuordnungen der lokalen Vokabulare und die Detailpfade der Webapp.
-Diese Betriebsadressen müssen vor produktiver Verwendung passend konfiguriert sein. `catalogBaseUri` und
-`catalogDownloadBase` erlauben abweichende Laufzeit-URLs für isolierte Tests.
-Neue Dateinamen werden zentral aus Thema und Ausgabe abgeleitet; bestehende
-Download-Zuordnungen bleiben erhalten. Prozentzeichen im Dateinamen werden in
-URLs nochmals URL-kodiert, damit Objekt-Key und URL eindeutig zusammenpassen.
+* Nur Metadaten: Fachliche Beschreibung und Freigabe ersetzen; technische
+  Datumswerte, Distributionen und Kennzahlen erhalten. Keine Datenkonvertierung.
+* Nur CSV: Metadaten aus der angenommenen Sammlung verwenden; fehlt das Thema
+  dort, das ausgewählte Repository-Datenblatt übernehmen.
+* Beides: Neues Datenblatt übernehmen und die CSV damit verarbeiten.
+* Neue Themen/Serien: In die Sammlung aufnehmen; erst bei vollständigen
+  technischen Angaben einen Katalogeintrag erzeugen.
 
-== Git und Vorschau
+`SERIES_ID` beziehungsweise `seriesId` bezeichnet weiterhin die Ausgabe als
+Freitext. Nur bei CSV für eine Serie ist sie obligatorisch, maximal 100 Zeichen.
+Ohne CSV wird sie ignoriert. `modified` erhält bei Datenlieferungen den einmal
+pro Lauf bestimmten Annahmetag in `Europe/Zurich`; fehlendes `issued` wird bei
+der ersten Datenannahme gesetzt. Andere Ausgaben bleiben unverändert.
 
-Direkte Gradle-Aufrufe sind standardmässig Vorschauen (`working-tree`, ohne
-Schreibfreigabe). Der Jenkins-Step `prepareDatenportalWorkspace` stellt entweder
-eine eigene Kopie des Seeder-Snapshots oder einen eigenen Git-Checkout bereit.
-Die Pipeline hält vom Checkout bis zum Ende des Gradle-Aufrufs die gemeinsame
-Sperre `datenportal-topic-repository`.
+Unbekannte Ausgaben bleiben mit deterministischer vorläufiger Kennung,
+`in_review` und `isCurrentIssue=false` im Katalog, ohne das fachliche Datenblatt
+zu erweitern. Spätere Metadaten ordnen sie über Serienkennung und
+Ausgabe-Bezeichnung zu. Zurückgezogene Ausgaben bleiben technisch erhalten und
+verlieren ihre Freigabe. Eine Ausgabe ist öffentlich nur mit freigegebener Serie
+und eigener Freigabe. Die vollständige öffentliche XTF bleibt technisch lesbar.
 
-Git-Rückschreiben erfordert sämtliche Properties:
+Identifikatoren und Dataset/Serie-Typen dürfen im normalen Job nicht geändert
+werden. Solche Migrationen müssen Sammlung, Katalog und Beziehungen gemeinsam
+korrigieren. INTERLIS-Modelle für CSV sind bei Konfiguration erforderlich;
+fehlende Modelle, ungültige Spalten und doppelte Kennungen führen zum Fehler.
 
-[cols="1,2",options="header"]
+== Freigaben und URLs
+
+[cols="1,3",options="header"]
 |===
 |Property |Bedeutung
-|`topicRepositoryMode` |`managed-git`
-|`gitWriteBack` |ausdrücklich `true`
-|`topicRepositoryUrl`, `topicRepositoryBranch` |erwartetes Remote und Branch
-|`gitBaseRevision` |Revision beim Erstellen des Build-Checkouts
-|`gitCommitterName`, `gitCommitterEmail` |technische Commit-Identität
+|`publicationManifestUrl` |Öffentlich lesbare HTTP(S)-Adresse von `current.json`, aus Jenkins erreichbar.
+|`s3Publish` |Default `false`; eigene Freigabe für S3-Publikation.
+|`catalogDownloadBase` |Öffentliche Basis für neue Download-URLs; darf von der intern erreichbaren Leseadresse abweichen.
+|`reloadPortal` |Default `false`; wird im Formular als `RELOAD_PORTAL` übergeben.
+|`portalReloadUrl`, `portalReloadToken` |Administrativ gesetzter POST-Endpunkt und Secret für `X-Reload-Token`.
+|`initialCatalog` |Optionale lokale XTF nur für den Initialaufbau.
 |===
 
-Gradles `ExecOperations` ruft die vorhandene Git-CLI auf. Vor der Übernahme müssen
-Exporte und Validierungen erfolgreich sein, der Checkout sauber und lokale wie
-Remote-Revision unverändert sein. Es werden ausschliesslich das ausgewählte
-Datenblatt und `shared/data/published-catalog.xtf` gestaged. Es gibt kein
-Force-Push, Rebase oder automatische Konfliktauflösung. Erst ein erfolgreicher
-Push wird als `accepted` protokolliert. Ein abgewiesener Push lässt allenfalls
-einen Commit im isolierten Build-Checkout zurück, niemals eine neue Remote-Basis.
+S3-Endpunkt, Region, Bucket, Access Key, Secret Key und ACL kommen aus der
+bestehenden zentralen S3-Konfiguration. `shared/publication.properties` hält
+Publisher, URI-Zuordnungen und weitere gemeinsame Defaults.
 
-Ein Vorschaukandidat wird nicht automatisch zum nächsten Eingangsstand.
-Lieferfolgen werden gegen ein separates Test-Repository geprüft. In einer
-Jenkins-Dev-Laufzeit sind Schreibzugriffe zusätzlich auf `file://`-Remotes beschränkt.
-S3, Reload, opendata.swiss und automatische Wiederaufnahme sind nicht enthalten.
+HTTP-Downloads erfordern beim vorhandenen Download-Plugin einen Aufruf *ohne*
+`--offline`; die konfigurierte lokale GRETL-/Gradle-Abhängigkeitsauflösung über
+das Offline-Bundle bleibt erhalten. Für Offline-Tests erlaubt die Vorschau
+`publicationManifestUrl=file:///.../current.json` und verwendet `Copy`.
+Publizierende Aufrufe erlauben ausschliesslich HTTP(S)-Eingangsadressen.
 
-== Abnahmetests
+== Initialisierung
 
-Im Schwester-Repository `datenportal-jenkins-dev` führt
-`./bin/test-image-publication.sh datenportal-jenkins:local` die echten GRETL-Tasks
-mit `--network none` aus. Fixtures stammen aus dem Themenrepo und
-`datenportal-pilot-daten`. Temporäre Kopien und ein eigenes Bare-Repository halten
-alle Git-Schreibzugriffe vom Quellrepository getrennt.
+Vor Freigabe der Standardjobs beziehungsweise während diese pausiert sind:
+
+[source,bash]
+----
+./shared/bin/gradlew-java17.sh -I shared/gradle/init.gradle \
+  initializePublication \
+  -PpublicationManifestUrl=https://downloads.example.org/current.json \
+  -Ps3Publish=true
+----
+
+S3-Zugangsdaten werden extern über die Umgebung bereitgestellt. Optional kann
+`-PinitialCatalog=/pfad/zum/bisherigen-katalog.xtf` ergänzt werden.
+Der Root-Task liest alle Repository-Datenblätter und Ämter, schreibt niemals
+Git und verweigert eine bereits vorhandene `current.json`. Ein anderer
+HTTP-Fehler als 404 ist kein gültiger Erststart. Ohne technische Daten entsteht
+eine Sammlung mit `catalog: null`; die erste Datenlieferung ergänzt den Katalog.
+
+== Git, Vorschau und Fehler
+
+Ohne `s3Publish=true` entstehen ausschliesslich lokale Ergebnisse: keine Uploads,
+Git-Schreiboperationen oder Reloads. Im Compose-Stack ist die S3-Freigabe für
+Garage ausdrücklich aktiv. Auch `working-tree` kann daher S3-Lieferfolgen
+verarbeiten; sein Repository und der Seeder-Snapshot bleiben unverändert.
+
+Git benötigt zusätzlich `gitWriteBack=true`, `topicRepositoryMode=managed-git`,
+`topicRepositoryUrl`, `topicRepositoryBranch`, `gitBaseRevision`,
+`gitCommitterName` und `gitCommitterEmail`. Die vorhandene Git-CLI prüft Checkout,
+Revision, Remote, Branch und erlaubte Änderungen. Ausschliesslich das ausgewählte
+Datenblatt wird gestaged. Kein Force-Push, Rebase oder automatische Konfliktlösung.
+Dev-Git-Schreibtests bleiben auf lokale `file://`-Remotes beschränkt.
+
+Die Pipeline hält `datenportal-topic-repository` vom Checkout bis zum Ende des
+Gradle-Aufrufs inklusive Reload. Nur das Umschalten von `current.json` macht
+einen neuen S3-Gesamtstand verbindlich. Alte XTF-Versionen werden nicht gelöscht.
+
+* Fehler vor dem Umschalten lassen den bisherigen Verweis bestehen.
+* Git kann nach erfolgreichem Push und fehlgeschlagenem Umschalten bereits weiter sein.
+* Eine unklare PUT-Antwort wird durch Rücklesen geklärt; sonst lautet der Status `unknown`.
+* Ein Reloadfehler rollt S3 nicht zurück; das Portal hält den alten Snapshot.
+* CSV/XLSX/Parquet behalten feste Dateinamen und können deshalb bereits vor dem
+  Umschalten neue Daten enthalten. Die gemeinsame Übernahme gilt nur für die XTF.
+
+`outputs/` enthält XTF, Datenexporte, ausgewähltes Datenblatt unter `metadata/`,
+`current.json`, `metadata.patch`, `publication.patch` und `report.json`; neue XTF-Versionen liegen
+zusätzlich unter `release/`. Protokolle liegen unter `build/publication/`.
+Der Bericht dokumentiert Quell-/Ergebniskennung, Git-Revisionen, Vorschau,
+Publikation und Reload separat, auch bei Fehlern. Er ist keine Zustandsquelle.
+
+== Tests und weitere Konfiguration
+
+`datenportal-jenkins-dev/bin/test-image-publication.sh` prüft echte GRETL-Läufe
+mit `--network none`. Nur der Test übernimmt Kandidaten gezielt als nächste
+Fixture. `datenportal-dev-stack/scripts/test-publication.py` prüft reale
+Garage-Uploads und Fehlerfälle mit eigenen temporären Containern sowie einem
+isolierten Bare-Repository. Bestehende Stack-Volumes bleiben unangetastet.
+
+Die link:https://codeberg.org/edigonzales/datenportal-jenkins-dev/src/branch/main/docs/biblios/entwicklung/referenz-konfiguration.adoc[zentrale Jenkins-Konfigurationsreferenz]
+beschreibt ENV-Defaults und Neustart-/Seeder-Verhalten.
+`catalog.duckdb` für Erkunden, opendata.swiss, automatische Wiederaufnahme und
+Bereinigung alter Versionen sind nicht Bestandteil dieses Ablaufs.

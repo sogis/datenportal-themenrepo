@@ -1,0 +1,7 @@
+plugins { id 'ch.so.agi.gretl'; id 'de.undercouch.download' }
+ext.datenportalBootstrap = true
+ext.datenportalContext = [selectedDataset:'', seriesId:'', datasetIsSeries:false, metadataFile:'', dataFile:'',
+    publicationMode:'initialize', comment:'', metadataFileName:'', dataFileName:'', summaryLines:[]]
+apply from: 'shared/gradle/datenportal-s3.gradle'
+apply from: 'shared/gradle/datenportal-publication.gradle'
+tasks.register('initializePublication') { dependsOn 'publishToDatenportal'; group='datenportal' }

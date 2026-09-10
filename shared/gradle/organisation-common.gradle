@@ -118,10 +118,10 @@ String requiredDatasetElementText(Element parent, String childName, File sourceF
     return value
 }
 
-Map<String, Map<String, Object>> loadDatasets(File organizationDir) {
+Map<String, Map<String, Object>> loadDatasets(File organizationDir, String selected = null) {
     Map<String, Map<String, Object>> datasets = [:]
     organizationDir.eachDir { datasetDir ->
-        if (!looksLikeDatasetDirectory(datasetDir)) {
+        if (!looksLikeDatasetDirectory(datasetDir) || (selected && datasetDir.name != selected)) {
             return
         }
 
@@ -150,9 +150,10 @@ Map<String, Map<String, Object>> loadDatasets(File organizationDir) {
     return datasets
 }
 
-def availableDatasets = loadDatasets(project.projectDir)
+def availableDatasets = loadDatasets(project.projectDir, (findProperty('dataset') ?: organization.defaultDataset ?: '').toString())
 def availableDatasetIds = availableDatasets.keySet().sort()
 
+String publicationMode = (findProperty('publicationMode') ?: 'delivery').toString().trim()
 String selectedDataset = (findProperty('dataset') ?: organization.defaultDataset ?: '').toString().trim()
 String metadataFile = (findProperty('metadataFile') ?: '').toString().trim()
 String metadataFileName = (findProperty('metadataFileName') ?: '').toString().trim()
@@ -171,6 +172,7 @@ boolean seriesRequired = datasetIsSeries && !dataFile.isEmpty()
 project.group = 'ch.so.agi.datenportal'
 
 project.ext.datenportalContext = [
+        publicationMode       : publicationMode,
         organization          : organization,
         sharedRootDir         : sharedRootDir,
         sharedGradleDir       : sharedGradleDir,
@@ -255,7 +257,10 @@ def validateExecutionContext = {
         throw new GradleException(
                 "Dataset '${ctx.selectedDataset}' requires -PseriesId (Ausgabe) when supplying data for a DatasetSeries.")
     }
-    if (!ctx.metadataFile && !ctx.dataFile) {
+    if (!(ctx.publicationMode in ['delivery', 'repository-metadata'])) throw new GradleException('Unknown publicationMode.')
+    if (ctx.publicationMode == 'repository-metadata' && (ctx.metadataFile || ctx.dataFile))
+        throw new GradleException('Repository metadata mode does not accept uploads.')
+    if (ctx.publicationMode == 'delivery' && !ctx.metadataFile && !ctx.dataFile) {
         throw new GradleException("At least one of -PmetadataFile or -PdataFile must be supplied.")
     }
 

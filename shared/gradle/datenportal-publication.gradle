@@ -9,7 +9,8 @@ def taskTypes = ['Ili2duckdbImportSchema','Ili2duckdbImport','Ili2duckdbExport',
 
 // Source XTF files are immutable during preparation. Only the explicit Git task promotes candidates.
 def ctx = project.ext.datenportalContext
-def root = project.projectDir.parentFile
+def bootstrap = project.ext.has('datenportalBootstrap') && project.ext.datenportalBootstrap
+def root = bootstrap ? project.projectDir : project.projectDir.parentFile
 def workDir = new File(buildDir, 'publication')
 def outputs = new File(workDir, 'outputs')
 def db = new File(workDir, 'publication.duckdb')
@@ -18,7 +19,8 @@ def models = System.getenv('DATENPORTAL_MODELS_DIR') ?: new File(shared, 'models
 def sheetModel = 'SO_AGI_DataCatalog_Datasheet_20260523'
 def catalogModel = 'SO_AGI_DataCatalog_PublishedCatalog_20260602'
 def officeModel = 'SO_AGI_DataCatalog_Base_20260529'
-def previousFile = new File(shared, 'data/published-catalog.xtf')
+def previousFile = new File(workDir, 'input/previous-catalog.xtf')
+def previousSheets = new File(workDir, 'input/previous-datasheets.xtf')
 def deliveredMetadata = new File(workDir,'input/datasheet.xtf')
 def deliveredCsv = new File(workDir,'input/data.csv')
 def sqlConnection = {
@@ -30,14 +32,13 @@ new File(shared, 'publication.properties').withReader('UTF-8') { config.load(it)
 def literal = { Object value -> value == null ? 'NULL' : "'" + value.toString().replace("'", "''") + "'" }
 def identifier = { String value -> '"' + value.replace('"', '""') + '"' }
 def allSheets = []
-root.eachDir { orgDir ->
-    if (new File(orgDir, 'gretl-datenportal-job.yaml').isFile()) {
-        orgDir.eachDir { datasetDir ->
-            if (datasetDir.name.contains('.') && datasetDir.name ==~ /^[A-Za-z0-9][A-Za-z0-9_.-]*$/) {
-                def definitions = datasetDir.listFiles().findAll { it.isFile() && it.name.toLowerCase() ==~ /.*\.(xtf|xml)$/ }
-                if (definitions.size() != 1) throw new GradleException("Expected one datasheet in ${datasetDir}")
-                allSheets << definitions[0]
-            }
+// Only the explicit administrative bootstrap enumerates repository datasheets.
+if (bootstrap) root.eachDir { orgDir ->
+    if (new File(orgDir, 'gretl-datenportal-job.yaml').isFile()) orgDir.eachDir { datasetDir ->
+        if (datasetDir.name.contains('.') && datasetDir.name ==~ /^[A-Za-z0-9][A-Za-z0-9_.-]*$/) {
+            def files = datasetDir.listFiles().findAll { it.isFile() && it.name.toLowerCase() ==~ /.*\.(xtf|xml)$/ }
+            if (files.size()!=1) throw new GradleException("Expected one datasheet in ${datasetDir}")
+            allSheets << files[0]
         }
     }
 }
@@ -45,16 +46,16 @@ allSheets.sort { root.toPath().relativize(it.toPath()).toString() }
 def targetRelative = ctx.selectedDatasetDef?.metadataFile ? root.toPath().relativize(ctx.selectedDatasetDef.metadataFile.toPath()).toString() : ''
 def candidateSheet = new File(outputs, 'metadata/' + (ctx.selectedDatasetDef?.metadataFile?.name ?: 'datasheet.xtf'))
 def candidateCatalog = new File(outputs, 'published-catalog.xtf')
-def effectiveSheets = allSheets.collect { it.canonicalPath == ctx.selectedDatasetDef?.metadataFile?.canonicalPath && ctx.metadataFile ? deliveredMetadata : it }
 def report = [mode:'preview', dataset:ctx.selectedDataset, issue:ctx.seriesId, comment:ctx.comment,
     metadataFileName:ctx.metadataFileName, dataFileName:ctx.dataFileName, summaryLines:ctx.summaryLines, sourceFiles:allSheets.collect { root.toPath().relativize(it.toPath()).toString() }]
 project.ext.datenportalPublication = [workDir:workDir, outputs:outputs, candidateSheet:candidateSheet,
-    candidateCatalog:candidateCatalog, targetRelative:targetRelative, report:report]
+    candidateCatalog:candidateCatalog, targetRelative:targetRelative, report:report, bootstrap:bootstrap,
+    previousFile:previousFile, previousSheets:previousSheets, root:root, bootstrapFiles:allSheets]
 
 // Every operation touches the same temporary database, therefore explicitly chain all tasks.
-def first = tasks.register('initializePublication') {
+def first = tasks.register('preparePublicationWorkspace') {
     doLast {
-        project.ext.validateDatenportalExecution()
+        if (!bootstrap) project.ext.validateDatenportalExecution()
         [ctx.metadataFile,ctx.dataFile].findAll { it }.each { source ->
             if (file(source).canonicalPath.startsWith(workDir.canonicalPath+File.separator))
                 throw new GradleException('Delivery inputs must be outside build/publication; copy a previous candidate before submitting it.')
@@ -63,12 +64,9 @@ def first = tasks.register('initializePublication') {
         outputs.mkdirs()
         candidateSheet.parentFile.mkdirs()
         deliveredMetadata.parentFile.mkdirs()
-        // Jenkins stashes have no extension; ili2db and CsvValidator require a typed filename.
-        if (ctx.metadataFile) Files.copy(file(ctx.metadataFile).toPath(),deliveredMetadata.toPath())
-        if (ctx.dataFile) Files.copy(file(ctx.dataFile).toPath(),deliveredCsv.toPath())
+
         report.acceptedDate = LocalDate.now(ZoneId.of('Europe/Zurich')).toString()
-        if (Files.exists(previousFile.toPath(), java.nio.file.LinkOption.NOFOLLOW_LINKS) && (!previousFile.isFile() || !previousFile.canRead()))
-            throw new GradleException('Existing catalog is not a readable regular file.')
+
         if (!new File(models, sheetModel+'.ili').isFile()) throw new GradleException('Offline models missing: '+models)
         if (ctx.metadataFile) {
             def supplied = project.ext.parseDatenportalDefinition(file(ctx.metadataFile))
@@ -77,7 +75,16 @@ def first = tasks.register('initializePublication') {
         }
     }
 }
-def chain = first
+def copyInputs = tasks.register('copyPublicationInputs', Copy) {
+    dependsOn first
+    into deliveredMetadata.parentFile
+    if (ctx.metadataFile) from(file(ctx.metadataFile)) { rename { 'datasheet.xtf' } }
+    else if (!bootstrap) from(ctx.selectedDatasetDef.metadataFile) { rename { 'datasheet.xtf' } }
+    if (ctx.dataFile) from(file(ctx.dataFile)) { rename { 'data.csv' } }
+}
+project.ext.publicationInputDependency = copyInputs
+apply from: new File(shared, 'gradle/datenportal-publication-transfer.gradle')
+def chain = tasks.named('validatePublicationInputs')
 ['repository':sheetModel, 'incoming':sheetModel, 'sheets':sheetModel, 'offices':officeModel, 'previous':catalogModel, 'candidate':catalogModel].each { schemaName, model ->
     def preceding = chain
     chain = tasks.register('createPublicationSchema_'+schemaName, taskTypes.Ili2duckdbImportSchema) {
@@ -87,26 +94,43 @@ def chain = first
         getOutputs().upToDateWhen { false }
     }
 }
-def registerImport = { String name, String schemaName, String model, List<File> files, boolean enabled ->
+def registerImport = { String name, String schemaName, String model, List<File> files, Closure enabled ->
     def preceding = chain
     chain = tasks.register(name, taskTypes.Ili2duckdbImport) {
         dependsOn preceding
         databaseFile db; schema schemaName; modelNames model; modelDirectories models
         transferFiles files
         getOutputs().upToDateWhen { false }
-        onlyIf { enabled }
+        onlyIf { enabled() }
     }
 }
-// Distinct dataset names isolate the repeated editor basket id x1 across files.
-allSheets.eachWithIndex { f,i ->
-    registerImport('importOriginalSheet_'+i,'repository',sheetModel,[f],true)
-    tasks.named('importOriginalSheet_'+i) { datasetNames('sheet_'+i) }
-    registerImport('importEffectiveSheet_'+i,'sheets',sheetModel,[effectiveSheets[i]],true)
-    tasks.named('importEffectiveSheet_'+i) { datasetNames('sheet_'+i) }
+if (bootstrap) allSheets.eachWithIndex { f,i ->
+    registerImport('importInitialSheet_'+i,'repository',sheetModel,[f],{ true })
+    tasks.named('importInitialSheet_'+i) { datasetNames('sheet_'+i) }
 }
-registerImport('importIncomingSheet','incoming',sheetModel,ctx.metadataFile ? [deliveredMetadata] : [],!!ctx.metadataFile)
-registerImport('importOffices','offices',officeModel,[new File(shared,'data/offices.xtf')],true)
-registerImport('importPreviousCatalog','previous',catalogModel,[previousFile],previousFile.isFile())
+else registerImport('importPreviousSheets','repository',sheetModel,[previousSheets],{ true })
+registerImport('importIncomingSheet','incoming',sheetModel,[deliveredMetadata],{ !bootstrap })
+registerImport('importOffices','offices',officeModel,[new File(shared,'data/offices.xtf')],{ true })
+registerImport('importPreviousCatalog','previous',catalogModel,[previousFile],{ previousFile.isFile() })
+def imported = chain
+def selection = tasks.register('preparePublicationSelection') {
+    dependsOn imported
+    doLast {
+        def sql=sqlConnection()
+        try {
+            sql.execute('CREATE SCHEMA runtime')
+            sql.execute('CREATE TABLE runtime.selection(dataset VARCHAR,replace_metadata BOOLEAN)')
+            sql.execute('INSERT INTO runtime.selection VALUES (?,?)',[ctx.selectedDataset,!!ctx.metadataFile || ctx.publicationMode=='repository-metadata'])
+            if (!bootstrap && sql.firstRow('select count(*) as n from incoming.dataset').n!=1)
+                throw new GradleException('Metadata delivery must contain exactly one selected topic.')
+        } finally { sql.close() }
+    }
+}
+chain = tasks.register('mergeDatasheets', taskTypes.DuckDbSqlExecutor) {
+    dependsOn selection
+    database db; installExtensions false
+    sqlFiles new File(shared,'sql/publication/merge-datasheets.sql')
+}
 
 def effective = [:]
 def prepareData = tasks.register('configurePublicationData') {
@@ -126,9 +150,10 @@ def prepareData = tasks.register('configurePublicationData') {
                 throw new GradleException('Unknown creatorRef in datasheet collection.')
             if (sql.rows('select dataset_issues,issuelabel from sheets.datasetissue group by dataset_issues,issuelabel having count(*)>1'))
                 throw new GradleException('Duplicate issue labels in datasheet collection.')
-            effective.model = issue ? (issue[0].model ?: d.model) : d.model
+            if (!bootstrap && !d) throw new GradleException('Selected datasheet missing after merge.')
+            effective.model = issue ? (issue[0].model ?: d?.model) : d?.model
             def attrs = issue ? sql.rows('select * from sheets.datasetattribute where datasetissue_attributes=? order by t_seq,t_id',[issue[0].t_id]) : []
-            if (!attrs) attrs=sql.rows('select * from sheets.datasetattribute where dataset_attributes=? order by t_seq,t_id',[d.t_id])
+            if (!attrs) attrs=sql.rows('select * from sheets.datasetattribute where dataset_attributes=? order by t_seq,t_id',[d?.t_id])
             effective.attributes=attrs
             if (ctx.dataFile) {
                 def header=sql.firstRow('SELECT * FROM read_csv(?, header=false, all_varchar=true) LIMIT 1',[deliveredCsv.absolutePath])
@@ -180,7 +205,7 @@ def prepareCsvSql = tasks.register('prepareCsvConversion') {
         }
         def columnCheck = effective.attributes ? 'SELECT CASE WHEN (SELECT list(column_name ORDER BY ordinal_position) FROM information_schema.columns WHERE table_schema=\'csv_input\' AND table_name=\'records\') != ['+effective.attributes.collect { literal(it.aname) }.join(',')+'] THEN error(\'CSV columns do not match declared attributes\') ELSE true END;\n' : ''
         new File(workDir,'convert.sql').text=columnCheck+'CREATE SCHEMA IF NOT EXISTS data;\nCREATE TABLE data.records AS SELECT '+(expressions ? expressions.join(',') : '*')+' FROM csv_input.records;\n'
-        copy { from deliveredCsv; into outputs; rename { effective.names.csv } }
+
     }
 }
 def convert = tasks.register('convertDeliveredCsv', taskTypes.DuckDbSqlExecutor) {
@@ -197,13 +222,8 @@ def convert = tasks.register('convertDeliveredCsv', taskTypes.DuckDbSqlExecutor)
     }
 }
 def parameters = tasks.register('preparePublicationParameters') {
-    dependsOn convert
+    dependsOn 'copyDataExports'
     doLast {
-        if (ctx.dataFile) {
-            ['parquet','xlsx'].each { format ->
-                copy { from new File(workDir,'delivery.'+format); into outputs; rename { effective.names[format] } }
-            }
-        }
         def sql=sqlConnection()
         try {
             def counts=ctx.dataFile ? sql.firstRow('select count(*) as n from data.records') : [n:0]
@@ -214,7 +234,6 @@ def parameters = tasks.register('preparePublicationParameters') {
                         throw new GradleException('Mandatory CSV column contains null values: '+a.aname)
                 }
             }
-            sql.execute('CREATE SCHEMA runtime')
             sql.execute('''CREATE TABLE runtime.parameters(dataset VARCHAR,issue VARCHAR,is_series BOOLEAN,has_data BOOLEAN,today DATE,
                 provisional_id VARCHAR,file_stem VARCHAR,object_count BIGINT,attribute_count INTEGER,base_uri VARCHAR,download_base VARCHAR,
                 publisher VARCHAR,catalog_title VARCHAR,catalog_description VARCHAR,dataset_path VARCHAR,series_path VARCHAR,issue_path VARCHAR)''')
@@ -253,7 +272,8 @@ def exportSelected = tasks.register('exportSelectedDatasheet', taskTypes.Ili2duc
     dependsOn exportSheets
     databaseFile db; schema 'sheets'; modelNames sheetModel; modelDirectories models
     dataFiles candidateSheet
-    datasetNames('sheet_'+allSheets.findIndexOf { it.canonicalPath == ctx.selectedDatasetDef?.metadataFile?.canonicalPath })
+    datasetNames(ctx.selectedDataset ?: 'unused')
+    onlyIf { !bootstrap }
 }
 def exportCatalog = tasks.register('exportPublishedCatalog', taskTypes.Ili2duckdbExport) {
     dependsOn exportSelected
@@ -337,8 +357,16 @@ tasks.register('preparePublication') {
     dependsOn validateOutputs
     doLast {
         report.message=report.catalogPresent ? 'Lieferung vorbereitet; noch nicht veröffentlicht.' : 'Datenblätter vorbereitet; noch keine katalogfähigen Daten.'
-        new File(outputs,'report.json').text=JsonOutput.prettyPrint(JsonOutput.toJson(report))+'\n'
+        project.ext.writePublicationReport()
     }
 }
+tasks.register('copyDataExports', Copy) {
+    dependsOn 'convertDeliveredCsv'
+    into outputs
+    from(deliveredCsv) { rename { effective.names.csv } }
+    from(new File(workDir,'delivery.parquet')) { rename { effective.names.parquet } }
+    from(new File(workDir,'delivery.xlsx')) { rename { effective.names.xlsx } }
+    onlyIf { !!ctx.dataFile }
+}
 apply from: new File(shared,'gradle/datenportal-git.gradle')
-tasks.register('publishToDatenportal') { dependsOn 'commitAndPushMetadata'; group='datenportal'; description='Prepares a delivery and optionally commits its metadata; no S3 upload or reload.' }
+apply from: new File(shared,'gradle/datenportal-publication-upload.gradle')

@@ -20,26 +20,36 @@ abstract class DatenportalGitCommands {
     }
 }
 def git=objects.newInstance(DatenportalGitCommands)
-def root=project.projectDir.parentFile
+def root=project.ext.datenportalPublication.root
 def publication=project.ext.datenportalPublication
 def propertyText={ String name -> (findProperty(name) ?: '').toString().trim() }
-def requestedWrite=propertyText('gitWriteBack')=='true'
+def requestedWrite=propertyText('gitWriteBack')=='true' && project.ext.datenportalPublication.publish && !project.ext.datenportalPublication.bootstrap
 def repositoryMode=propertyText('topicRepositoryMode') ?: 'working-tree'
 publication.report.baseRevision=propertyText('gitBaseRevision') ?: null
 publication.report.resultRevision=null
+tasks.register('createPublicationDiff') {
+    dependsOn 'validatePublication'
+    doLast {
+        def compare = { File original, File candidate ->
+            git.run(root,['diff','--no-index','--',original.isFile() ? original.path : '/dev/null',
+                candidate.isFile() ? candidate.path : '/dev/null'],true).text
+        }
+        new File(publication.outputs,'metadata.patch').text = publication.bootstrap ? '' :
+            compare(new File(root,publication.targetRelative),publication.candidateSheet)
+        new File(publication.outputs,'publication.patch').text =
+            compare(publication.previousSheets,new File(publication.outputs,'datasheets.xtf')) +
+            compare(publication.previousFile,publication.candidateCatalog)
+    }
+}
+tasks.named('preparePublication') { dependsOn 'createPublicationDiff' }
 tasks.register('commitAndPushMetadata') {
     dependsOn 'preparePublication'
     doLast {
-        def changes=[(publication.targetRelative):publication.candidateSheet]
-        if (publication.candidateCatalog.isFile()) changes['shared/data/published-catalog.xtf']=publication.candidateCatalog
-        def diff=new StringBuilder()
-        changes.each { relative, candidate ->
-            File original=new File(root,relative)
-            diff.append(git.run(root,['diff','--no-index','--',original.isFile() ? original.path : '/dev/null',candidate.path],true).text)
-        }
-        new File(publication.outputs,'metadata.patch').text=diff.toString()
+        def changes=publication.bootstrap ? [:] : [(publication.targetRelative):publication.candidateSheet]
         if (repositoryMode=='working-tree' && requestedWrite) throw new GradleException('Git write-back is forbidden in working-tree mode.')
         if (requestedWrite) {
+            publication.report.git='failed'
+            project.ext.writePublicationReport()
             if (repositoryMode!='managed-git') throw new GradleException('Git write-back requires managed-git mode.')
             def branch=propertyText('topicRepositoryBranch')
             def remote=propertyText('topicRepositoryUrl')
@@ -78,7 +88,7 @@ tasks.register('commitAndPushMetadata') {
                 git.run(root,['push','origin','HEAD:refs/heads/'+branch])
             }
             publication.report.resultRevision=git.run(root,['rev-parse','HEAD']).text.trim()
-            publication.report.mode='accepted'
+            publication.report.git='pushed'
         }
         new File(publication.outputs,'report.json').text=JsonOutput.prettyPrint(JsonOutput.toJson(publication.report))+'\n'
     }
