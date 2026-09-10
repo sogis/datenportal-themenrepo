@@ -108,6 +108,7 @@ fehlende Modelle, ungültige Spalten und doppelte Kennungen führen zum Fehler.
 |Property |Bedeutung
 |`publicationManifestUrl` |Öffentlich lesbare HTTP(S)-Adresse von `current.json`, aus Jenkins erreichbar.
 |`s3Publish` |Default `false`; eigene Freigabe für S3-Publikation.
+|`catalogBaseUri` |URI-Basis; überschreibt `baseUri` aus `shared/publication.properties`.
 |`catalogDownloadBase` |Öffentliche Basis für neue Download-URLs; darf von der intern erreichbaren Leseadresse abweichen.
 |`reloadPortal` |Default `false`; wird im Formular als `RELOAD_PORTAL` übergeben.
 |`portalReloadUrl`, `portalReloadToken` |Administrativ gesetzter POST-Endpunkt und Secret für `X-Reload-Token`.
@@ -115,8 +116,35 @@ fehlende Modelle, ungültige Spalten und doppelte Kennungen führen zum Fehler.
 |===
 
 S3-Endpunkt, Region, Bucket, Access Key, Secret Key und ACL kommen aus der
-bestehenden zentralen S3-Konfiguration. `shared/publication.properties` hält
-Publisher, URI-Zuordnungen und weitere gemeinsame Defaults.
+bestehenden zentralen S3-Konfiguration, siehe xref:s3-upload.adoc[S3-Properties].
+Die öffentliche Leseadresse muss zum tatsächlich gewählten Uploadziel passen;
+ein anderer S3-Endpunkt ändert die Manifest- und Distributionsadressen nicht
+selbständig. Alle Aufrufe benötigen eine Manifestadresse, auch Vorschauen.
+
+=== Zentrale Publikationskonfiguration
+
+`shared/publication.properties` wird aus der jeweiligen Buildkopie gelesen.
+Änderungen im `working-tree` müssen daher zunächst geseedet werden. Für direkte
+Aufrufe gilt der verwendete Checkout. Die Werte sind fachliche Konfiguration,
+keine Secrets; sie aktivieren weder Upload noch Git.
+
+[cols="2,3,4",options="header"]
+|===
+|Schlüssel |Repository-Default |Verwendung / Override
+|`baseUri` |`https://data.so.ch` |Basis für öffentliche Ressourcen-URIs; `catalogBaseUri` hat Vorrang.
+|`downloadBase` |`https://s3.geo.so.ch/datenportal` |Basis neuer Distributions-URLs; `catalogDownloadBase` hat Vorrang. Bestehende Katalogzuordnungen werden erhalten.
+|`publisher` |`ch.so.agi` |Publisher-Zuordnung; Änderung in der Datei.
+|`title` |`Datenportal Kanton Solothurn` |Katalogtitel; Änderung in der Datei.
+|`description` |`Datensätze und Datenserien des Kantons Solothurn` |Katalogbeschreibung; Änderung in der Datei.
+|`theme.*`, `frequency.*`, `access.*` |URI-Zuordnungen je Modellwert in der Datei |SQL-Mappings für Thema, Nachführungsfrequenz und Zugriff; keine unabhängigen ENV-Schalter je Eintrag.
+|`datasetPath`, `seriesPath`, `issuePath` |`/datasets/`, `/series/`, `/issues/` |URI-Pfade der jeweiligen Ressourcentypen; Änderung in der Datei.
+|===
+
+Gradle-Properties können explizit mit `-P` oder extern als
+`ORG_GRADLE_PROJECT_<name>` bereitgestellt werden; `-P` hat Vorrang vor dieser
+Umgebungsvariable. Tokens und S3-Schlüssel extern injizieren, nicht als
+versionierte Properties oder sichtbare Kommandozeilenargumente. Konfiguration
+wird je Gradle-Aufruf gelesen; ein laufender Build übernimmt keine späteren Änderungen.
 
 HTTP-Downloads erfordern beim vorhandenen Download-Plugin einen Aufruf *ohne*
 `--offline`; die konfigurierte lokale GRETL-/Gradle-Abhängigkeitsauflösung über
@@ -136,6 +164,10 @@ Vor Freigabe der Standardjobs beziehungsweise während diese pausiert sind:
   -Ps3Publish=true
 ----
 
+Der Aufruf benötigt einen beschreibbaren Checkout, `GRADLE_JAVA_HOME_17`
+und die eingerichtete Abhängigkeits-/Modellauflösung. Die vollständige lokale
+Containeranleitung mit eigener Arbeitskopie und Wiederfreigabe der Jobs steht
+in der link:https://codeberg.org/edigonzales/datenportal-dev-stack/src/branch/main/docs/biblios/entwicklung/inbetriebnahme.adoc[Stack-Inbetriebnahme].
 S3-Zugangsdaten werden extern über die Umgebung bereitgestellt. Optional kann
 `-PinitialCatalog=/pfad/zum/bisherigen-katalog.xtf` ergänzt werden.
 Der Root-Task liest alle Repository-Datenblätter und Ämter, schreibt niemals

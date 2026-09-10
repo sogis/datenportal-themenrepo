@@ -3,7 +3,9 @@
 :toc: macro
 :toclevels: 2
 
+ifndef::themenrepo-gesamtdokument[]
 toc::[]
+endif::[]
 
 == Zweck
 

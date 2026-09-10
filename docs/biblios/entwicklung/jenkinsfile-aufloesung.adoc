@@ -33,7 +33,10 @@ Beim Ausführen des gemeinsamen Jenkinsfiles wird der Gradle-Wrapper unter ander
   -Pdataset=<dataset>
 ----
 
-Je nach Ausführung kommen Uploads für Metadaten und Daten, ein Kommentar sowie eine `SERIES_ID` hinzu. Der anschliessende Gradle-Build bindet die gemeinsame Build-Logik und die organisationsspezifische Build-Datei ein. Ein ausgewählter Datensatz kann zusätzlich seine optionale `dataset.gradle` laden. Die Einzelheiten dieses Builds sind im <<gradle-build-vertrag,Gradle-Build-Vertrag>> beschrieben.
+`PUBLICATION_MODE` wählt Lieferung mit Upload oder Repository-Abgleich ohne Upload.
+`RELOAD_PORTAL` fordert optional einen Reload nach Übernahme an. Je nach
+Ausführung kommen Metadaten-/CSV-Uploads, Kommentar und bei CSV für eine Serie
+`SERIES_ID` als Ausgabe hinzu. Der anschliessende Gradle-Build bindet die gemeinsame Build-Logik und die organisationsspezifische Build-Datei ein. Ein ausgewählter Datensatz kann zusätzlich seine optionale `dataset.gradle` laden. Die Einzelheiten dieses Builds sind in xref:gradle-build-vertrag.adoc[Gradle-Build-Vertrag] beschrieben.
 
 == Auflösungsreihenfolge
 

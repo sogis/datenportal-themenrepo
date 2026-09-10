@@ -2,6 +2,9 @@
 :page-layout: docs
 :toc: macro
 :toclevels: 3
+:themenrepo-gesamtdokument:
+
+toc::[]
 
 == Einleitung
 
@@ -38,10 +41,16 @@ Das Themenrepo ist keine lose Dateisammlung. Es ist ein maschinenlesbarer Vertra
 
 Eine Organisation ist ein Top-Level-Ordner mit gültiger `gretl-datenportal-job.yaml`. Ein Datensatz ist ein Unterordner einer Organisation mit genau einer `.xtf`- oder `.xml`-Datenblattdatei (= Metadaten zum Thema). Das Startformular ist fix und kann nicht konfiguriert werden.
 
+Der angenommene Lieferstand liegt in den durch S3-`current.json` bezeichneten
+Gesamt-XTF. Git verwaltet Code und einzelne Datenblätter; automatisches
+Git-Rückschreiben betrifft ausschliesslich das ausgewählte Datenblatt.
+
 == Weiterführend
 
 * Wie diese Struktur gescannt und validiert wird, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-gretl-plugin[datenportal-jenkins-gretl-plugin] beschrieben.
 * Wie das Themenrepo lokal in Jenkins und Offline-Tests eingebunden wird, ist im Repository link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev] beschrieben.
+
+* Die vollständige lokale Inbetriebnahme mit Garage, Initialisierung und Portalanschluss steht im link:https://codeberg.org/edigonzales/datenportal-dev-stack/src/branch/main/docs/biblios/entwicklung/index.adoc[Dev-Stack-Handbuch].
 
 == Kurzer Wegweiser
 

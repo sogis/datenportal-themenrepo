@@ -19,6 +19,12 @@ Das Startformular ist fix. Es wird nicht mehr aus YAML- oder Datensatzkonfigurat
 | `DATASET`
 | Aus den erkannten Datensatzordnern und Datenblättern der Organisation abgeleitet.
 
+| `PUBLICATION_MODE`
+| `delivery`: «Lieferung verarbeiten» (Default), mindestens eine Upload-Datei. `repository-metadata`: «Datenblatt aus Repository übernehmen», ohne Upload.
+
+| `RELOAD_PORTAL`
+| «Portal nach Veröffentlichung neu laden», Default aus; Reload nach erfolgreicher S3-Übernahme, sofern administrativ konfiguriert.
+
 | `METADATA_FILE`
 | Upload-Feld für Metadaten.
 
@@ -39,8 +45,13 @@ zugänglich; die bedingte Pflicht wird serverseitig geprüft.
 Eine reine Metadatenlieferung aktualisiert das gesamte Datenblatt und benötigt
 keine Ausgabe. Ein dennoch gesetztes `SERIES_ID` wird nicht an Gradle
 weitergereicht. Direkte Gradle-Aufrufe ignorieren `-PseriesId`, wenn
-`-PdataFile` fehlt. Mindestens eine Upload-Datei bleibt erforderlich.
+`-PdataFile` fehlt. Im Modus `delivery` bleibt mindestens eine Upload-Datei
+erforderlich. `repository-metadata` leert und deaktiviert Uploads und Ausgabe;
+technisch trotzdem übermittelte Uploads werden serverseitig abgewiesen.
+Diese Regeln gelten auch ohne JavaScript und für direkte Gradle-Aufrufe.
+Organisationsrechte bleiben für beide Modi gleich. Die Publikationsfreigabe
+ist eine administrative Einstellung und kein zusätzliches Formularfeld.
 
 == Keine GUI-Konfiguration im Themenrepo
 
-Das Themenrepo kann keine zusätzlichen Formularfelder definieren. 
+Das Themenrepo kann keine zusätzlichen Formularfelder definieren.

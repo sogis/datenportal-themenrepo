@@ -1,164 +1,67 @@
 = Lokaler Ablauf zum Integrieren und Testen
 :page-layout: docs
-:toc: macro
-:toclevels: 2
 
-DAS ÄNDERT SICH NOCH.
+== Umgebung und Zuständigkeit
 
-- garage auch im dev stack
-- gretl/gradle auch im container verwenden?
+Für die vollständige lokale Integration mit Garage, Jenkins und Editor gilt die
+link:https://codeberg.org/edigonzales/datenportal-dev-stack/src/branch/main/docs/biblios/entwicklung/inbetriebnahme.adoc[Dev-Stack-Inbetriebnahme].
+Sie enthält den administrativen Erstaufbau in einer beschreibbaren Kopie im
+Jenkins-Volume, Portalanschluss, Lieferfolgen und Fehlerdiagnose. Quellmount und
+Seeder-Snapshot dürfen nicht als Gradle-Buildverzeichnis verwendet werden.
 
-== Zweck und Abgrenzung
+Der separate Shellstart von Jenkins bleibt unter
+link:https://codeberg.org/edigonzales/datenportal-jenkins-dev/src/branch/main/docs/biblios/entwicklung/lokaler-jenkins-start.adoc[Jenkins lokal starten]
+beschrieben. Dort lässt sich `THEMEN_REPO_MODE` wählen; Compose setzt dagegen
+`working-tree` fest. Java-/Offline- und ENV-Einstellungen stehen in der
+link:https://codeberg.org/edigonzales/datenportal-jenkins-dev/src/branch/main/docs/biblios/entwicklung/referenz-konfiguration.adoc[Jenkins-Referenz].
 
-Dieses Kapitel beschreibt den lokalen End-to-End-Ablauf für Themenintegratoren:
-Eine Änderung am Themenrepo wird lokal übernommen, durch einen Seed-Lauf in
-Jenkins materialisiert und anschliessend als generierter Job geprüft.
+== Änderung bis zur angenommenen Veröffentlichung
 
-Die Details zum lokalen Jenkins-Start, zum Offline-Bundle und zur Plugin-
-Entwicklung liegen im Schwester-Repository
-link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].
-Dieses Kapitel verbindet diese technische Umgebung mit den fachlichen
-Änderungen im Themenrepo.
+. Organisation/Thema nach xref:organisationen.adoc[Organisationsvertrag] und xref:datensaetze.adoc[Datensatzvertrag] bearbeiten.
+. Im `working-tree`-Modus Arbeitsbaum speichern, im `managed-git`-Modus Änderungen auf dem konfigurierten Remote-Branch bereitstellen.
+. `gretl-datenportal-seed` erfolgreich ausführen; Organisation, Datensatzliste und generierte Parameter prüfen.
+. Vor der allerersten Standardlieferung administrativ `initializePublication` im Root ausführen; Standardjobs dabei pausieren und laufende Builds abwarten. Keine erneute Initialisierung bei vorhandenem Manifest.
+. Im Formular «Lieferung verarbeiten» mit CSV und/oder Metadaten oder «Datenblatt aus Repository übernehmen» ohne Upload wählen.
+. Build-Artefakte, Bericht und bei Publikation den S3-Verweis prüfen. Optional den Portal-Reload anfordern und dessen Ergebnis separat prüfen.
 
-== Voraussetzungen
+Der Seeder aktualisiert Repository-Snapshot und Jobdefinitionen. Er publiziert
+keine Metadaten. Ein geändertes Repository-Datenblatt wird durch den gezielten
+Repository-Abgleich in die Gesamtdateien übernommen. Nur bei CSV für eine Serie
+ist «Ausgabe» erforderlich; andere Metadatenläufe beziehen sich auf das ganze Thema.
 
-Benötigt werden:
+== Direkte Gradle-Vorschau
 
-* ein lokaler Checkout des Themenrepos;
-* die lokale Jenkins-Umgebung aus dem Repository
-  link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev];
-* Git sowie Java 17 und Java 21;
-* eine gültige Organisation oder ein gültiger Datensatz beziehungsweise eine
-  konkrete Änderung daran.
-
-Für die Anforderungen an Organisationen und Datensätze siehe xref:_neue_organisation_anlegen[Neue Organisation anlegen], xref:_neuen_datensatz_anlegen[Neuen Datensatz anlegen] und die Kapitel unter xref:_referenz[Referenz].
-
-== Lokalen Modus wählen
-
-Für lokale Änderungen stehen zwei Modi zur Verfügung:
-
-[cols="1,3",options="header"]
-|===
-| Modus | Verwendung
-
-| `working-tree`
-| Empfohlen für die lokale Entwicklung. Der Seed-Lauf verwendet den aktuellen
-Arbeitsbaum inklusive uncommitteter Änderungen. Ein Commit ist für den lokalen
-Test nicht erforderlich.
-
-| `managed-git`
-| Verwendet den committed Stand des konfigurierten Git-Branches. Dieser Modus
-entspricht dem produktionsnahen Ablauf.
-|===
-
-Der Modus wird vor dem Start der lokalen Jenkins-Umgebung über
-`THEMEN_REPO_MODE` gesetzt. Die genaue Konfiguration ist in der Doku zum
-link:https://codeberg.org/edigonzales/datenportal-jenkins-dev/src/branch/main/docs/biblios/entwicklung/lokaler-jenkins-start.adoc[lokalen Jenkins-Start]
-beschrieben.
-
-== Minimaler Ablauf
-
-. Lokalen Modus wählen, für die Entwicklung normalerweise `working-tree`.
-. Änderung im Themenrepo anlegen oder anpassen.
-. Lokalen Jenkins starten oder einen bereits laufenden Jenkins verwenden.
-. Den Job `gretl-datenportal-seed` manuell starten.
-. Prüfen, ob die Organisation und die Datensätze als Jenkins-Jobs
-   materialisiert wurden.
-. Einen generierten Job mit geeigneten Testdaten ausführen.
-. Bei weiteren Änderungen den Seed-Lauf erneut starten und die Prüfung
-   wiederholen.
-
-== Änderung im Themenrepo vorbereiten
-
-Eine neue Organisation wird nach dem Ablauf in xref:_neue_organisation_anlegen[Neue Organisation anlegen] erstellt. Ein neuer Datensatz wird nach dem Ablauf in xref:_neuen_datensatz_anlegen[Neuen Datensatz anlegen] ergänzt.
-
-Vor dem Jenkins-Test sollten mindestens die Repository-Struktur, die
-Pflichtdateien und die Datensatzkennung geprüft werden. Die fachlichen Regeln stehen
-in xref:_organisationen[Organisationen], xref:_datensätze[Datensätze] und
-xref:_referenz_scan_und_validierungsregeln[Referenz: Scan- und Validierungsregeln].
-
-Optional kann der Gradle-Build-Vertrag direkt im Themenrepo geprüft werden:
+Aus einem beschreibbaren Themenrepo-Checkout mit Java 17 und eingerichteter
+Abhängigkeitsauflösung, Organisation und Datensatz passend wählen:
 
 [source,bash]
 ----
-./gradlew -I "$PWD/shared/gradle/init.gradle" -p agi tasks
+./shared/bin/gradlew-java17.sh --no-daemon \
+  -I "$PWD/shared/gradle/init.gradle" -p agi preparePublication \
+  -Pdataset=ch.so.agi.av_nachfuehrungsstatistik.personal \
+  -PpublicationMode=repository-metadata \
+  -PpublicationManifestUrl=http://localhost:8081/ch.so.daten/current.json \
+  -Ps3Publish=false
 ----
 
-Dabei ist `agi` durch den betroffenen Organisationsordner zu ersetzen. Die
-Details zum Build-Vertrag und zum Offline-Test stehen in
-xref:gradle-build-vertrag[Gradle-Build-Vertrag] und
-xref:_offline_bundle_und_java_laufzeiten[Offline-Bundle und Java-Laufzeiten].
+`GRADLE_JAVA_HOME_17` muss auf Java 17 zeigen. Der HTTP-Aufruf verwendet kein
+`--offline`; lokale Bundle-Abhängigkeiten sind trotzdem nutzbar. Im Container
+statt der Hostadresse die interne Downloads-Adresse verwenden.
 
-== Lokalen Jenkins starten
+`preparePublication` ist stets rein vorbereitend. `publishToDatenportal` erlaubt
+bei `s3Publish=true` zusätzlich S3-Übernahme und gegebenenfalls Git/Reload.
+Im Dev-Stack ist S3 standardmässig freigegeben; `working-tree` verhindert
+weiterhin Git-Schreiben. Eine Vorschau führt ihre Kandidaten nicht als nächsten
+Eingang weiter. Ein publizierender Lauf verwendet beim nächsten Mal den neuen
+S3-Gesamtstand, ohne Quellrepo oder Seeder-Snapshot zu ändern.
 
-Für den empfohlenen lokalen Entwicklungsmodus wird die lokale Jenkins-
-Umgebung mit `working-tree` gestartet:
+== Ergebnisse und Grenzen
 
-[source,bash]
-----
-cd ../datenportal-jenkins-dev
-THEMEN_REPO_MODE=working-tree ./bin/start.sh
-----
+Die fachlichen Regeln, Datumswerte, unbekannten Ausgaben, Freigaben, Diffs und
+Fehlerzustände sind in xref:lieferverarbeitung.adoc[Lieferverarbeitung] beschrieben.
+Bei weiteren Repository-Änderungen erneut seeden. Fehlendes Manifest ist kein
+stiller Erststart; ID- und Typänderungen sind manuelle Migrationen.
 
-Der konfigurierte Pfad zum Themenrepo muss auf den lokalen Checkout zeigen.
-Falls Jenkins bereits läuft, wird die Umgebung nicht erneut gestartet; der
-Ablauf kann direkt mit dem Seed-Lauf fortgesetzt werden.
-
-Der vollständige Startablauf, die Voraussetzungen und mögliche Overrides sind
-im Kapitel
-link:https://codeberg.org/edigonzales/datenportal-jenkins-dev/src/branch/main/docs/biblios/entwicklung/lokaler-jenkins-start.adoc[Lokalen Jenkins starten]
-beschrieben.
-
-== Seed-Lauf und generierte Jobs prüfen
-
-Nach dem Start wird in Jenkins der Job `gretl-datenportal-seed` manuell
-ausgeführt. Im Modus `working-tree` wird dabei ein neuer Jenkins-interner
-Snapshot des externen Arbeitsbaums erzeugt. Erst danach werden Änderungen an
-Organisationen und Datensätzen in den generierten Jobs sichtbar.
-
-Anschliessend:
-
-. die lokale Datenportal-UI unter `http://localhost:8080/gretl-datenportal`
-  öffnen;
-. prüfen, ob die erwartete Organisation und der erwartete Datensatz angezeigt
-  werden;
-. den generierten Organisationsjob öffnen;
-. ein geeignetes Testdatenblatt beziehungsweise eine geeignete Datendatei
-  angeben;
-. den Job starten und Ergebnis sowie Build-Log prüfen.
-
-Der Seed-Lauf und seine Auswirkungen auf generierte Jobs sind in
-xref:_seed_lauf_und_bootstrap[Seed-Lauf und Bootstrap] beschrieben. Die
-lokalen Benutzer, Berechtigungen und Testdaten gehören zur technischen
-Jenkins-Dev-Umgebung und sind dort dokumentiert.
-
-== Änderungen iterieren
-
-Im `working-tree`-Modus werden uncommittete Änderungen erst beim nächsten
-Seed-Lauf übernommen. Nach jeder relevanten Änderung gilt deshalb:
-
-. Änderung im Themenrepo speichern.
-. Seed-Job erneut starten.
-. Generierte Organisation und Datensätze erneut prüfen.
-. Bei Bedarf den generierten Job nochmals ausführen.
-
-Im `managed-git`-Modus muss die Änderung zuerst committed und auf dem
-konfigurierten Branch verfügbar sein. Danach wird ebenfalls ein Seed-Lauf
-ausgeführt.
-
-== Typische Fehlerstellen
-
-* Die Änderung ist im lokalen Arbeitsbaum vorhanden, aber der Seed-Lauf wurde
-  noch nicht erneut ausgeführt.
-* Der falsche Repository-Modus oder ein falscher Repository-Pfad ist
-  konfiguriert.
-* Eine Organisation oder ein Datensatz erfüllt die Namens- oder
-  Strukturregeln nicht.
-* Der generierte Job ist vorhanden, aber der Build schlägt wegen eines
-  Gradle-, Java- oder Offline-Bundle-Problems fehl.
-
-Für Scanner- und Validierungsfehler siehe
-xref:_referenz_scan_und_validierungsregeln[Referenz: Scan- und
-Validierungsregeln]. Für Fehler in der lokalen Ausführungsumgebung siehe die
-Doku im Repository
-link:https://codeberg.org/edigonzales/datenportal-jenkins-dev[datenportal-jenkins-dev].
+Git schreibt bei zusätzlicher Freigabe ausschliesslich das ausgewählte
+Datenblatt, vor dem Umschalten von `current.json`. CSV/XLSX/Parquet besitzen
+feste Namen; ein alter Manifestverweis allein stellt alte Daten nicht wieder her.

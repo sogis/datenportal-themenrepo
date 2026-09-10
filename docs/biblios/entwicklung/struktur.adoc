@@ -9,6 +9,7 @@ Das Themenrepo besteht aus einem gemeinsamen Bereich `shared/` und je einem Top-
 
 [source,text]
 ----
+build.gradle                       # administrativ: initializePublication
 shared/
 ├── gretl-datenportal-defaults.yaml
 ├── gretl-datenportal-teams.yaml
@@ -63,6 +64,12 @@ Der Ordner `shared/` enthält repo-weite Vorgaben und gemeinsame Build-Logik.
 
 | `shared/gradle/gradle-build.properties`
 | Source of Truth für Plugin-Versionen, Repository-URLs und Offline-Seed-Koordinaten.
+
+| `shared/publication.properties`
+| Fachliche Katalogdefaults und URI-Mappings; siehe xref:lieferverarbeitung.adoc[Publikationsvertrag].
+
+| `shared/gradle/datenportal-publication*.gradle`, `shared/sql/`
+| GRETL-Taskkette und SQL-Verarbeitung für Gesamt-XTF, Lieferung und Publikation.
 
 | `shared/data/`
 | Gemeinsame Referenzdaten, zum Beispiel `offices.xtf`.

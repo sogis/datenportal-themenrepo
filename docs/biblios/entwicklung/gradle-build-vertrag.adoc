@@ -4,7 +4,9 @@
 :toc: macro
 :toclevels: 2
 
+ifndef::themenrepo-gesamtdokument[]
 toc::[]
+endif::[]
 
 == Grundidee
 
@@ -18,9 +20,13 @@ shared/gradle/init.gradle
 -> <organisation>/<dataset>/dataset.gradle
 ----
 
-== Kein globales `build.gradle`
+== Organisationen und administrativer Root-Einstieg
 
-Es gibt kein globales `build.gradle` für alle Organisationen. Jede Organisation hat ihr eigenes `build.gradle`.
+Jede Organisation hat ihr eigenes `build.gradle` für Standardlieferungen.
+Das Root-`build.gradle` stellt zusätzlich `initializePublication` für den
+administrativen Erstaufbau bereit. Dieser Aufruf verwendet kein `-p` und
+keine Auswahl eines einzelnen Themas; er liest alle Repository-Datenblätter.
+Details und Schutz vor Überschreiben: xref:lieferverarbeitung.adoc[Lieferverarbeitung].
 
 [source,text]
 ----
@@ -46,6 +52,7 @@ plugins {
     id 'ch.so.agi.gretl'
 }
 
+ext.datenportalOrganization = [id: 'agi', title: 'Amt für Geoinformation']
 apply from: '../shared/gradle/organisation-common.gradle'
 ----
 
@@ -105,7 +112,14 @@ Die Serie wird bereits durch `-Pdataset` ausgewählt. Eine Ausgabe ist nur bei
 Datenlieferungen (`-PdataFile`) zu einer `DatasetSeries` erforderlich.
 Bei reinen Metadatenlieferungen wird ein dennoch gesetztes `seriesId` ignoriert:
 Der Kontext, die vorgeschlagenen Argumente und der Ausführungsreport enthalten
-dann eine leere Ausgabe. Mindestens eine Upload-Datei bleibt erforderlich.
+dann eine leere Ausgabe. `publicationMode=delivery` (Default) verlangt
+mindestens eine Upload-Datei. `publicationMode=repository-metadata` übernimmt
+das ausgewählte Repository-Datenblatt ohne Upload; dennoch übermittelte
+Uploads werden abgewiesen. `reloadPortal` ist standardmässig `false`.
+
+`preparePublication` bereitet ausschliesslich vor. `publishToDatenportal`
+verwendet zusätzlich die administrativen S3-/Git-Freigaben und führt
+gegebenenfalls den angeforderten Reload aus.
 
 Im `datenportalContext` beschreibt `datasetIsSeries` den Typ des Datenthemas.
 `seriesRequired` bezeichnet dagegen die bedingte Ausgabepflicht für den

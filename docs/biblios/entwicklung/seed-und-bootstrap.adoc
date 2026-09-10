@@ -3,7 +3,9 @@
 :toc: macro
 :toclevels: 2
 
+ifndef::themenrepo-gesamtdokument[]
 toc::[]
+endif::[]
 
 == Zweck des Seed-Laufs
 
@@ -28,7 +30,7 @@ Ein Seed-Lauf ist nötig nach Änderungen an:
 
 == Lokaler Bootstrap
 
-Nach einem frischen lokalen Checkout provisioniert das Jenkins-Plugin den Seed-Job `gretl-datenportal-seed` nach dem Start automatisch. 
+Nach einem frischen lokalen Checkout provisioniert das Jenkins-Plugin den Seed-Job `gretl-datenportal-seed` nach dem Start automatisch.
 
 In der lokalen Dev-Umgebung kommen Repository-Quelle und Modus aus
 `datenportal-jenkins-dev/casc/jenkins.yaml` beziehungsweise den Env-Variablen
@@ -51,6 +53,17 @@ Damit ist klar, ob eine Änderung fachlich versioniert oder nur lokal getestet
 wird. Nach einem frischen lokalen Start führt `admin` den ersten Seed-Lauf aus;
 danach kann das Mitglied des konfigurierten Seeder-Teams `seed-user` den Seeder
 starten.
+
+== Publikationsbestand initialisieren
+
+Der oben beschriebene Bootstrap erzeugt Jenkins-Jobs, keinen S3-Bestand.
+Vor der ersten Standardlieferung muss zusätzlich der administrative Root-Task
+`initializePublication` einen Gesamtstand mit `current.json` erzeugen.
+Standardjobs dafür pausieren und laufende Builds abwarten. Die vollständige
+link:https://codeberg.org/edigonzales/datenportal-dev-stack/src/branch/main/docs/biblios/entwicklung/inbetriebnahme.adoc[Stack-Inbetriebnahme]
+beschreibt die beschreibbare Container-Arbeitskopie und optionale Katalogmigration.
+Bei vorhandenem Manifest ist die Initialisierung gesperrt. Ein späterer Seed
+aktualisiert keinen S3-Bestand; dafür Lieferung oder Repository-Abgleich starten.
 
 == Was versioniert ist
 

@@ -36,8 +36,10 @@ Der aktuelle Vertrag ist bewusst streng:
 - `permissions.read` und `permissions.build` referenzieren Teams aus
   `shared/gretl-datenportal-teams.yaml`.
 - Der Standardtask `publishToDatenportal` bereitet Lieferungen mit GRETL und
-  SQL vor und schreibt bei ausdrücklicher Freigabe Datenblatt und vollständigen
-  Katalog ins Git-Repository zurück. S3-Upload und Reload sind noch nicht angebunden.
+  SQL vor. Bei S3-Freigabe publiziert er vollständige Gesamt-XTF über
+  `current.json`; zusätzlich freigegebenes Git-Rückschreiben betrifft nur das
+  ausgewählte Datenblatt. Ein Portal-Reload ist optional.
+  `initializePublication` im Root erzeugt administrativ den ersten Stand.
   Details: [SQL-Lieferverarbeitung](docs/biblios/entwicklung/lieferverarbeitung.adoc).
 - Die gemeinsame Datei `shared/gradle/datenportal-s3.gradle` stellt die
   zentrale S3-Konfiguration und `registerDatenportalS3Upload` für
@@ -55,10 +57,11 @@ materialisiert.
 
 Der lokale Jenkins verwendet fuer die Authentisierung einen JCasC-Local-
 Security-Realm; eine AD-/LDAP-Umgebung ist fuer lokale Tests nicht notwendig.
-Der Seed-Lauf verarbeitet nur den committed Stand des konfigurierten
-Git-Branches. Uncommitted Aenderungen werden nicht uebernommen. Der lokale
-Workflow lautet daher: Themenrepo-Aenderungen committen, Seed-Job starten und
-anschliessend die materialisierten Jenkins-Jobs pruefen. Die lokalen Konten
+Im Modus `managed-git` verarbeitet der Seed-Lauf den committed Stand des
+konfigurierten Branches. Im lokalen Compose-Stack gilt `working-tree`: auch
+uncommittete Änderungen werden beim nächsten Seed als Snapshot übernommen.
+Danach die materialisierten Jobs prüfen. S3 bleibt in beiden Fällen die
+Quelle des angenommenen Gesamtstands; Seeden allein publiziert kein Datenblatt. Die lokalen Konten
 und der Bootstrap-Ablauf sind im Schwester-Repository
 [datenportal-jenkins-dev](https://codeberg.org/edigonzales/datenportal-jenkins-dev)
 dokumentiert.
