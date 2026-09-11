@@ -5,6 +5,9 @@ import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Element
 import org.w3c.dom.Node
 
+// Organisations-Builds definieren nur ihren Kontext und binden diesen gemeinsamen
+// Ablauf ein. Dadurch gelten für Jenkins und direkte Gradle-Aufrufe dieselben
+// Eingaberegeln, ohne sie in jedem Organisationsverzeichnis zu duplizieren.
 if (!project.ext.has('datenportalOrganization')) {
     throw new GradleException(
             "Project ${project.path} must define ext.datenportalOrganization before applying ../shared/gradle/organisation-common.gradle.")
@@ -39,10 +42,16 @@ boolean looksLikeDatasetDirectory(File datasetDir) {
             && folderName == folderName.toLowerCase(Locale.ROOT)
 }
 
+// Für die Taskkonfiguration brauchen wir Kennung und Typ des ausgewählten Themas
+// bereits vor dem Import. Dieser kleine XML-Leser liefert nur den Aufrufkontext;
+// die vollständige Modellvalidierung folgt im IliValidator, der Datenumbau in SQL.
+// Hier wird kein XML verändert oder für den Export nachbearbeitet.
 Map<String, Object> parseDatasetDefinition(File datasetDefinitionFile) {
     try {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance()
         factory.setNamespaceAware(true)
+        // Das Lesen der Metadaten soll keine externen DTDs oder Schemas nachladen.
+        // Die eigentliche INTERLIS-Modellauflösung gehört zum späteren Validator.
         factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true)
         factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_DTD, '')
         factory.setAttribute(XMLConstants.ACCESS_EXTERNAL_SCHEMA, '')
@@ -80,6 +89,9 @@ Map<String, Object> parseDatasetDefinition(File datasetDefinitionFile) {
     }
 }
 
+// Nur direkte Kinder betrachten: Verschachtelte Ausgaben und Strukturen dürfen
+// nicht mit dem obersten Dataset/der Serie oder deren Feldern verwechselt werden.
+// Lokale Elementnamen machen die Auswahl unabhängig vom gewählten XML-Präfix.
 Element directChildElement(Element parent, String expectedLocalName) {
     for (Node child = parent.firstChild; child != null; child = child.nextSibling) {
         if (child.nodeType == Node.ELEMENT_NODE && elementLocalName(child) == expectedLocalName) {
@@ -118,6 +130,10 @@ String requiredDatasetElementText(Element parent, String childName, File sourceF
     return value
 }
 
+// Bei einer Auswahl wird nur dieses Repository-Datenblatt gelesen. Der angenommene
+// Gesamtstand stammt später aus S3; andere Themen müssen hier nicht importiert werden.
+// Ordnername und fachliche Kennung müssen übereinstimmen, damit Formularauswahl und
+// späteres Git-Ziel eindeutig dasselbe Thema bezeichnen.
 Map<String, Map<String, Object>> loadDatasets(File organizationDir, String selected = null) {
     Map<String, Map<String, Object>> datasets = [:]
     organizationDir.eachDir { datasetDir ->
@@ -160,13 +176,18 @@ String metadataFileName = (findProperty('metadataFileName') ?: '').toString().tr
 String dataFile = (findProperty('dataFile') ?: '').toString().trim()
 String dataFileName = (findProperty('dataFileName') ?: '').toString().trim()
 String comment = (findProperty('comment') ?: '').toString()
-// Metadata-only deliveries always address the complete datasheet.
+// seriesId bezeichnet fachlich eine Ausgabe innerhalb der ausgewählten Serie.
+// Ohne CSV wird der Wert bewusst ignoriert: Eine Metadatenlieferung oder ein
+// Repository-Abgleich betrifft das gesamte Serien-Datenblatt, nicht eine Ausgabe.
 String seriesId = dataFile ? (findProperty('seriesId') ?: '').toString().trim() : ''
 
 Map<String, Object> selectedDatasetEntry = selectedDataset ? availableDatasets[selectedDataset] : null
 File selectedDatasetDir = selectedDatasetEntry?.dir as File
 def selectedDatasetDefinition = selectedDatasetEntry?.definition
 boolean datasetIsSeries = selectedDatasetDefinition?.series == true
+// «Ist eine Serie» und «braucht eine Ausgabe» sind verschiedene Aussagen. Nur eine
+// tatsächliche Datenlieferung an eine Serie benötigt eine Ausgabe; neue, noch nicht
+// im Datenblatt enthaltene Ausgaben bleiben als Freitext zulässig.
 boolean seriesRequired = datasetIsSeries && !dataFile.isEmpty()
 
 project.group = 'ch.so.agi.datenportal'
@@ -194,6 +215,9 @@ project.ext.datenportalContext = [
         summaryLines          : []
 ]
 
+// Ein optionales dataset.gradle ergänzt den gemeinsamen Kontext nur für das gewählte
+// Thema. Die Closure wird nach dem Laden aufgerufen, damit themenspezifische Angaben
+// bereits vor der Konfiguration der Publikations-Tasks zur Verfügung stehen.
 if (selectedDatasetDir != null) {
     File datasetOverride = new File(selectedDatasetDir, 'dataset.gradle')
     if (datasetOverride.isFile()) {
@@ -237,6 +261,10 @@ def buildGradleArguments = {
     return arguments
 }
 
+// Erst beim Vorbereiten einer Lieferung die ausführungsabhängigen Pflichtwerte
+// prüfen. So bleiben Diagnose-Tasks ohne Upload nutzbar. Diese Prüfung ist auch bei
+// direktem Gradle-Aufruf nötig, weil dann keine Jenkins-Formularprüfung vorausgeht.
+// Inhaltliche Modell- und Konsistenzprüfungen folgen in Validatoren beziehungsweise SQL.
 def validateExecutionContext = {
     Map<String, Object> ctx = project.ext.datenportalContext as Map<String, Object>
 

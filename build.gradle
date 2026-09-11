@@ -1,4 +1,8 @@
 plugins { id 'ch.so.agi.gretl'; id 'de.undercouch.download' }
+// Der Root-Build ist der administrative Einstieg für den ersten Gesamtstand.
+// Er hat kein ausgewähltes Thema und keine Uploads. Der Bootstrap-Kontext ergänzt
+// das einmalige Einlesen aller Datenblätter; SQL und S3-Veröffentlichung verwenden
+// anschliessend denselben Ablauf wie die Organisationsjobs. Git bleibt dabei gesperrt.
 ext.datenportalBootstrap = true
 ext.datenportalContext = [selectedDataset:'', seriesId:'', datasetIsSeries:false, metadataFile:'', dataFile:'',
     publicationMode:'initialize', comment:'', metadataFileName:'', dataFileName:'', summaryLines:[]]

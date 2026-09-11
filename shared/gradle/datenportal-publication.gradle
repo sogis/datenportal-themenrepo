@@ -1,4 +1,7 @@
-// Applied scripts use the same resolved plugin classpath as the project.
+// Ein mit «apply from» geladenes Skript hat einen eigenen Skript-Klassenpfad.
+// Wir übernehmen die bereits aufgelösten Plugins des Projekts, damit die GRETL-
+// und Download-Taskklassen auch hier verfügbar sind. So braucht dieses Skript
+// weder eigene Plugin-Versionen noch eine zusätzliche Abhängigkeitsauflösung.
 buildscript { dependencies { classpath files(project.buildscript.configurations.classpath) } }
 
 import ch.so.agi.gretl.tasks.*
@@ -12,7 +15,10 @@ import java.time.Duration
 import java.time.LocalDate
 import java.time.ZoneId
 
-// Fixed paths and configuration; task results are read lazily from local files.
+// Pfade und Konfiguration stehen vor dem Tasklauf fest. Die Root-Initialisierung
+// startet im Themenrepo, ein Organisationsjob dagegen eine Verzeichnisebene tiefer.
+// Sämtliche Arbeitsdaten liegen unter build/publication: Jeder Lauf erhält eine
+// frische DuckDB; nur der über current.json bezeichnete Stand wird weitergeführt.
 def ctx = project.ext.datenportalContext
 def bootstrap = project.ext.has('datenportalBootstrap') && project.ext.datenportalBootstrap
 def root = bootstrap ? project.projectDir : project.projectDir.parentFile
@@ -30,6 +36,9 @@ def publish = (findProperty('s3Publish') ?: 'false').toString() == 'true'
 def reload = (findProperty('reloadPortal') ?: 'false').toString() == 'true'
 def manifestUrl = (findProperty('publicationManifestUrl') ?: '').toString().trim()
 def localInput = manifestUrl.startsWith('file:')
+// Eindeutige XTF-Dateinamen erlauben, beide Kandidaten vollständig hochzuladen,
+// während current.json noch auf das bisherige Dateipaar zeigt. CSV/XLSX/Parquet
+// behalten ihre festen Namen und sind von dieser gemeinsamen Umschaltung ausgenommen.
 def releaseId = UUID.randomUUID().toString()
 def initialCatalog = findProperty('initialCatalog') ? file(findProperty('initialCatalog')) : null
 def selectedSheet = new File(outputs, 'metadata/' + (ctx.selectedDatasetDef?.metadataFile?.name ?: 'datasheet.xtf'))
@@ -37,10 +46,17 @@ def config = new Properties()
 new File(shared, 'publication.properties').withReader('UTF-8') { config.load(it) }
 def json = { File f -> new JsonSlurper().parse(f) }
 def writeJson = { File f, value -> f.text = JsonOutput.prettyPrint(JsonOutput.toJson(value)) + '\n' }
+// sqlParameters ersetzt Text in SQL-Dateien. Deshalb müssen auch lokale Dateipfade
+// als SQL-Zeichenketten maskiert werden, etwa wenn ein Pfad ein Apostroph enthält.
+// Die eigentlichen Laufwerte stehen in JSON; ihre fachliche Auswertung bleibt SQL.
 def quote = { value -> "'" + value.toString().replace("'", "''") + "'" }
 def sqlPaths = [parameters_file:quote(new File(work,'parameters.json')),
     mappings_file:quote(new File(work,'mappings.json')),control_file:quote(new File(work,'delivery.json')),
     result_file:quote(new File(work,'result.json'))]
+// Das Manifest ist der gemeinsame Vertrag mit Portal und Editor. Die Bindung der
+// Dateinamen an releaseId schliesst fremde URLs und Pfadwechsel aus. catalog:null
+// ist ein gültiger Erststand ohne technische Lieferdaten; ein fehlendes Feld oder
+// ein beschädigter Verweis darf dagegen nicht als leerer Katalog behandelt werden.
 def manifest = { value ->
     if (!(value instanceof Map) || value.schemaVersion != 1 || !(value.releaseId instanceof String)
         || !(value.releaseId ==~ /[A-Za-z0-9][A-Za-z0-9_-]{0,127}/)
@@ -49,6 +65,11 @@ def manifest = { value ->
         throw new GradleException('Invalid publication manifest (schemaVersion, releaseId or filenames).')
     value
 }
+// Provider lesen Dateien erst, wenn ein nachgelagerter Task sie benötigt. Während
+// Gradle den Ablauf konfiguriert, existieren die Downloads und SQL-Ergebnisse noch
+// nicht. dependsOn sichert jeweils die Erzeugung vor dem Lesen. current liest dabei
+// immer dieselbe lokale Downloadkopie; weitere S3-Abfragen zur Kontrolle ersetzen
+// diese Eingangsgrundlage nicht. delivery/result sind nur Arbeitsartefakte des Laufs.
 def current = providers.provider { bootstrap ? [:] : manifest(json(new File(input,'current.json'))) }
 def delivery = providers.provider { json(new File(work,'delivery.json'))[0] }
 def result = providers.provider { json(new File(work,'result.json'))[0] }
@@ -57,7 +78,10 @@ def catalogInput = providers.provider { bootstrap ? initialCatalog != null : cur
 def report = [mode:'preview', dataset:ctx.selectedDataset, issue:ctx.seriesId, comment:ctx.comment,
     metadataFileName:ctx.metadataFileName,dataFileName:ctx.dataFileName,summaryLines:ctx.summaryLines,
     publicationMode:ctx.publicationMode,releaseId:releaseId,git:'not-requested',publication:'not-published',reload:'not-requested',sourceFiles:[]]
-// The Git script shares fixed locations and the phase report, not a mutable publication context.
+// Die Git-Anbindung braucht dieselben Pfade und ergänzt denselben Ergebnisbericht.
+// Fachliche Zwischenergebnisse werden ausschliesslich über die SQL-Arbeitsdateien
+// gelesen. Die separate Schreibfreigabe verhindert Git-Änderungen bei Vorschauen
+// und bei der administrativen Initialisierung, auch wenn gitWriteBack gesetzt ist.
 project.ext.publicationWorkDir = work
 project.ext.publicationRoot = root
 project.ext.publicationReport = report
@@ -65,8 +89,12 @@ project.ext.publicationWriteEnabled = publish && !bootstrap
 def writeReport = { outputs.mkdirs(); writeJson(new File(outputs,'report.json'),report) }
 project.ext.writePublicationReport = writeReport
 
-// Only existence checks and uncertain PUT resolution need an HTTP status/body pair.
-// All artifact transfers below use Download, Copy or S3Upload tasks.
+// Für die Initialisierung müssen wir 404 von Zugriffs- und Serverfehlern unterscheiden.
+// Nach einer unklaren PUT-Antwort müssen wir zudem prüfen können, ob der neue Verweis
+// trotz Fehlermeldung bereits gilt. Dafür liefert diese kleine HTTP-Hilfe Status und
+// Inhalt zusammen. Reguläre Dateiübertragungen erledigen die unten sichtbaren Tasks.
+// Die Kontrollabfrage fordert einen frischen Stand an; ein alter Cacheinhalt könnte
+// sonst eine erfolgte Veröffentlichung als fehlgeschlagen erscheinen lassen.
 def readPointer = {
     def uri = URI.create(manifestUrl)
     if (localInput) {
@@ -83,6 +111,8 @@ def readPointer = {
 tasks.register('preparePublicationWorkspace') {
     doLast {
         if (!bootstrap) project.ext.validateDatenportalExecution()
+        // Das Arbeitsverzeichnis wird anschliessend gelöscht. Lieferdateien darin
+        // würden dabei verloren gehen; diese Fehlkonfiguration muss vorher auffallen.
         [ctx.metadataFile,ctx.dataFile,initialCatalog].findAll { it }.each { source ->
             if (file(source).canonicalPath.startsWith(work.canonicalPath+File.separator))
                 throw new GradleException('Delivery inputs must be outside build/publication.')
@@ -97,6 +127,10 @@ tasks.register('preparePublicationWorkspace') {
             throw new GradleException('initialCatalog must be a readable file and is only allowed during initialization.')
         delete work
         input.mkdirs(); outputs.mkdirs(); selectedSheet.parentFile.mkdirs()
+        // Das Annahmedatum wird genau einmal bestimmt. Auch ein Lauf über Mitternacht
+        // soll für Serie, Ausgabe und Katalog denselben Schweizer Kalendertag verwenden.
+        // Die JSON-Dateien übergeben Werte und URI-Zuordnungen an SQL, ohne fachliche
+        // Abfragen oder Typentscheidungen im Groovy-Code nachzubilden.
         report.acceptedDate = LocalDate.now(ZoneId.of('Europe/Zurich')).toString()
         writeJson(new File(work,'parameters.json'), [[dataset:ctx.selectedDataset,issue:ctx.seriesId,
             is_series:ctx.datasetIsSeries,has_data:!!ctx.dataFile,today:report.acceptedDate,bootstrap:bootstrap,
@@ -109,12 +143,18 @@ tasks.register('preparePublicationWorkspace') {
             series_path:config.getProperty('seriesPath'),issue_path:config.getProperty('issuePath')]])
         writeJson(new File(work,'mappings.json'), config.stringPropertyNames().sort().collect { [key:it,value:config.getProperty(it)] })
         if (bootstrap) {
+            // Nur ein ausdrückliches «nicht vorhanden» erlaubt den Erstaufbau.
+            // Ein nicht erreichbarer oder geschützter Bestand ist kein leerer Bestand.
             def response = readPointer()
             if (response.status != 404) throw new GradleException("Initialization requires an absent current.json (HTTP 404); got ${response.status}.")
         }
     }
 }
 
+// Der Verweis wird einmal heruntergeladen und danach lokal ausgewertet. Er darf
+// weder aus Gradles vorherigem Task-Ergebnis noch aus einem HTTP-Cache stammen.
+// tempAndMove verhindert, dass ein abgebrochener Download als fertige Datei vorliegt.
+// Offline-Vorschauen verwenden für denselben Ablauf eine lokale Kopie mit Copy.
 tasks.register('downloadCurrent', Download) {
     overwrite true; tempAndMove true; compress false
     header 'Accept-Encoding','identity'; header 'Cache-Control','no-cache, no-store'
@@ -171,6 +211,9 @@ tasks.register('copyPreviousCatalog', Copy) {
 tasks.register('copyPublicationInputs', Copy) {
     dependsOn 'downloadPreviousDatasheets','downloadPreviousCatalog','copyPreviousDatasheets','copyPreviousCatalog'
     into input
+    // Das Repository-Datenblatt wird auch bei einer reinen CSV-Lieferung bereitgestellt.
+    // Ob es übernommen wird, entscheidet SQL: Bestehende Themen verwenden grundsätzlich
+    // die angenommene Sammlung; für ein dort neues Thema dient es als Metadatenquelle.
     if (!bootstrap) from(ctx.metadataFile ? file(ctx.metadataFile) : (ctx.selectedDatasetDef?.metadataFile ?: [])) { rename { 'datasheet.xtf' } }
     if (ctx.dataFile) from(file(ctx.dataFile)) { rename { 'data.csv' } }
 }
@@ -191,6 +234,13 @@ tasks.register('validateOffices', IliValidator) {
     modelDirectories models; logFile new File(work,name+'.log')
     dependsOn 'validateIncomingSheet'; dataFiles new File(shared,'data/offices.xtf')
 }
+// Alle folgenden Datenbankzugriffe sind über dependsOn sequenziell verbunden, weil
+// sie dieselbe DuckDB verwenden. Getrennte Schemas halten Eingangsstand und Ergebnis
+// auseinander. Basket- und Transfer-ID-Spalten erhalten die für den XTF-Export
+// nötigen Zuordnungen; coalesceJson legt die von den SQL-Dateien erwartete Abbildung
+// verschachtelter Strukturen fest. Änderungen daran müssen mit SQL abgestimmt werden.
+// Die Tasks laufen auch bei unveränderten Eingabepfaden erneut, da die Arbeitsdatenbank
+// am Anfang jedes Laufs neu angelegt wird.
 tasks.register('createPublicationSchema_repository', Ili2duckdbImportSchema) {
     databaseFile db; modelDirectories models
     createBasketCol.set(true); createTidCol.set(true); coalesceJson.set(true)
@@ -232,7 +282,8 @@ tasks.register('importPreviousSheets', Ili2duckdbImport) {
     dependsOn 'createPublicationSchema_candidate'; schema 'repository'; modelNames sheetModel
     transferFiles new File(input,'previous-datasheets.xtf'); onlyIf { !bootstrap }
 }
-// Bootstrap contributes only the administrative input tasks to this same chain.
+// Nur die Initialisierung sammelt alle Repository-Datenblätter. Sie ergänzt hier
+// ihre Eingangs-Tasks; SQL, Exporte und Veröffentlichung bleiben derselbe Ablauf.
 if (bootstrap) apply from: new File(shared,'gradle/datenportal-initialize.gradle')
 tasks.register('importIncomingSheet', Ili2duckdbImport) {
     databaseFile db; modelDirectories models; getOutputs().upToDateWhen { false }
@@ -261,11 +312,18 @@ tasks.register('validateDeliveredCsv', CsvValidator) {
 }
 tasks.register('prepareCsvConversion') {
     dependsOn 'validateDeliveredCsv'; onlyIf { !!ctx.dataFile }
+    // SQL hat Modell, Attribute, Prüfungen und Konvertierung bereits aus den wirksamen
+    // Metadaten bestimmt. GRETL erwartet für den nächsten Schritt eine SQL-Datei;
+    // diese Brücke schreibt den erzeugten Text unverändert heraus. Dadurch gibt es
+    // keine zweite Implementierung der Typ- und Auswahlregeln in Groovy.
     doLast { new File(work,'convert.sql').text = delivery.get().sql + '\n' }
 }
 tasks.register('convertDeliveredCsv', DuckDbSqlExecutor) {
     database db; installExtensions false; getOutputs().upToDateWhen { false }
     dependsOn 'prepareCsvConversion'; onlyIf { !!ctx.dataFile }
+    // Zunächst alles als Text lesen, damit DuckDB keine Typen errät und beispielsweise
+    // führende Nullen entfernt. Erst convert.sql typisiert anhand des Datenblatts;
+    // XLSX und Parquet werden anschliessend aus derselben typisierten Tabelle erzeugt.
     sources { csv('csv_input') { file new File(input,'data.csv'); table='records'; header=true; allVarchar=true } }
     sqlFiles new File(work,'convert.sql')
     exports {
@@ -284,6 +342,9 @@ tasks.register('assemblePublication', DuckDbSqlExecutor) {
     dependsOn 'copyDataExports'
     sqlFiles new File(shared,'sql/publication/assemble.sql'),new File(shared,'sql/publication/result.sql')
 }
+// Kennungen und Beziehungen wurden in SQL gesetzt. Die Exporte werden direkt
+// validiert und weiterverwendet; Präfixe und Formatierung verantwortet der Exporter.
+// Der Einzelexport ist für das Git-Rückschreiben bestimmt, die Gesamtdateien für S3.
 tasks.register('exportDatasheets', Ili2duckdbExport) {
     databaseFile db; modelDirectories models
     dependsOn 'assemblePublication'; schema 'sheets'; modelNames sheetModel; dataFiles new File(outputs,'datasheets.xtf')
@@ -321,6 +382,9 @@ tasks.register('preparePublication') {
         writeReport()
     }
 }
+// preparePublication endet vor den Veröffentlichungsschritten. Die Abhängigkeiten
+// sind bewusst so gerichtet, dass ein direkter Vorbereitungsaufruf auch bei gesetzten
+// S3-, Git- und Reloadschaltern ausschliesslich lokale Ergebnisse erzeugt.
 tasks.register('stagePublication', Copy) {
     dependsOn 'preparePublication'; into release
     from(new File(outputs,'datasheets.xtf')) { rename { "datasheets-${releaseId}.xtf" } }
@@ -366,6 +430,10 @@ tasks.register('downloadCandidateCatalog', Download) {
 tasks.register('verifyPublicationCandidates') {
     dependsOn 'downloadCandidateDatasheets','downloadCandidateCatalog'; onlyIf { publish }
     doLast {
+        // Eine erfolgreiche S3-Antwort allein belegt noch nicht, dass Leser die neuen
+        // Dateien am konfigurierten öffentlichen Ziel erhalten. Vor Git und Umschaltung
+        // vergleichen wir deshalb den öffentlich gelesenen Inhalt bytegenau mit den
+        // Uploadkandidaten. Hier geht es um Übertragungstreue, nicht um XML-Formatierung.
         ['datasheets','catalog'].findAll { nextManifest.get()[it]!=null }.each { key ->
             if (new File(release,nextManifest.get()[key]).bytes != new File(work,'readback/'+key+'.xtf').bytes)
                 throw new GradleException('Public XTF readback differs: '+key)
@@ -373,12 +441,20 @@ tasks.register('verifyPublicationCandidates') {
     }
 }
 tasks.named('commitAndPushMetadata') { dependsOn 'verifyPublicationCandidates' }
+// Git muss vor der Umschaltung erfolgreich sein. Scheitert der Push, bleibt der
+// bisherige S3-Verweis gültig. Scheitert erst die Umschaltung, kann Git bereits das
+// neue Datenblatt enthalten; der Bericht hält beide Ergebnisse getrennt fest.
 tasks.register('uploadCurrentManifest', S3Upload) {
     dependsOn 'commitAndPushMetadata'; sourceFile new File(outputs,'current.json'); contentType 'application/json'; onlyIf { publish }
     doFirst {
+        // Unmittelbar vor dem Schreiben nochmals den Ausgangsstand prüfen. Das erkennt
+        // zwischenzeitliche Änderungen, ersetzt aber keine Sperre: Lesen und PUT sind
+        // nicht atomar. Jenkins muss den gesamten Lauf organisationsübergreifend sperren.
         def response=readPointer()
         if (bootstrap ? response.status!=404 : response.status!=200 || manifest(new JsonSlurper().parseText(response.body))!=current.get())
             throw new GradleException('Publication baseline changed; current.json was not overwritten.')
+        // Bei Verbindungsabbruch kann S3 den PUT bereits angenommen haben. Deshalb ab
+        // hier «unknown» statt «not-published» melden, bis das Rücklesen Klarheit schafft.
         report.pointerAttempted=true; report.publication='unknown'; writeReport()
     }
     doLast {
@@ -388,7 +464,10 @@ tasks.register('uploadCurrentManifest', S3Upload) {
         report.publication='accepted'; report.mode='accepted'; writeReport()
     }
 }
-// Standard uploads share credentials; the single preflight above validates them.
+// Die drei ausdrücklich benannten Upload-Tasks verwenden dieselbe S3-Konfiguration.
+// checkPublicationTarget prüft sie einmal vor dem ersten Upload. Leere Platzhalter
+// erlauben, den Taskablauf auch ohne Credentials für eine Vorschau zu konfigurieren.
+// Diese Schleife setzt nur gemeinsame Eigenschaften; sie erzeugt keine neuen Tasks.
 [ tasks.named('uploadDataExports'), tasks.named('uploadPublicationFiles'), tasks.named('uploadCurrentManifest') ].each { upload ->
     upload.configure {
         def s3=project.ext.datenportalS3
@@ -403,6 +482,9 @@ tasks.register('reloadPortal', Curl) {
     method 'POST'; expectedStatusCode 200
     headers(['X-Reload-Token':(findProperty('portalReloadToken') ?: '').toString()])
     outputFile new File(outputs,'reload-response.json'); onlyIf { publish && reload }
+    // Der Reload folgt erst nach bestätigter S3-Übernahme. Bei einem HTTP- oder
+    // Anwendungsfehler bleibt die Veröffentlichung angenommen; nur der Portal-Reload
+    // ist fehlgeschlagen. HTTP 200 genügt nicht, die Antwort muss success bestätigen.
     doFirst { report.reload='failed'; writeReport() }
     doLast {
         if (json(new File(outputs,'reload-response.json')).success!=true) throw new GradleException('Portal did not confirm successful reload.')
@@ -411,7 +493,12 @@ tasks.register('reloadPortal', Curl) {
 }
 tasks.register('publishToDatenportal') { dependsOn 'reloadPortal'; group='datenportal' }
 
-// Reporting also runs after a failed dependency; an uncertain PUT must be reconciled.
+// Ein Fehler in einer Abhängigkeit verhindert nachgelagerte doLast-Aktionen. Der
+// Abschlussbericht wird deshalb am Buildende auch im Fehlerfall geschrieben.
+// Wurde ein PUT versucht, klärt erneutes Rücklesen eine verlorene Antwort soweit
+// möglich. Bleibt das Ziel unerreichbar oder ungültig, bleibt der Status «unknown».
+// Ein bestätigter S3-Stand bleibt auch bei einem späteren Reloadfehler «accepted»;
+// der Bericht dient der Diagnose und wird nie als Eingang des nächsten Laufs gelesen.
 gradle.buildFinished { outcome ->
     if (report.pointerAttempted && report.publication!='accepted') {
         try {
