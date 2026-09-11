@@ -207,7 +207,7 @@ Vor Freigabe der Standardjobs beziehungsweise während diese pausiert sind:
 Der Aufruf benötigt einen beschreibbaren Checkout, `GRADLE_JAVA_HOME_17`
 und die eingerichtete Abhängigkeits-/Modellauflösung. Die vollständige lokale
 Containeranleitung mit eigener Arbeitskopie und Wiederfreigabe der Jobs steht
-in der link:https://codeberg.org/edigonzales/datenportal-dev-stack/src/branch/main/docs/biblios/entwicklung/inbetriebnahme.adoc[Stack-Inbetriebnahme].
+in der link:https://codeberg.org/edigonzales/datenportal-dev-stack/src/branch/main/docs/biblios/inbetriebnahme.adoc[Stack-Inbetriebnahme].
 S3-Zugangsdaten werden extern über die Umgebung bereitgestellt. Optional kann
 `-PinitialCatalog=/pfad/zum/bisherigen-katalog.xtf` ergänzt werden.
 Der Root-Task liest alle Repository-Datenblätter und Ämter, schreibt niemals

@@ -4,7 +4,7 @@
 == Umgebung und Zuständigkeit
 
 Für die vollständige lokale Integration mit Garage, Jenkins und Editor gilt die
-link:https://codeberg.org/edigonzales/datenportal-dev-stack/src/branch/main/docs/biblios/entwicklung/inbetriebnahme.adoc[Dev-Stack-Inbetriebnahme].
+link:https://codeberg.org/edigonzales/datenportal-dev-stack/src/branch/main/docs/biblios/inbetriebnahme.adoc[Dev-Stack-Inbetriebnahme].
 Sie enthält den administrativen Erstaufbau in einer beschreibbaren Kopie im
 Jenkins-Volume, Portalanschluss, Lieferfolgen und Fehlerdiagnose. Quellmount und
 Seeder-Snapshot dürfen nicht als Gradle-Buildverzeichnis verwendet werden.

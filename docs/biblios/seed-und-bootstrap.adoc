@@ -60,7 +60,7 @@ Der oben beschriebene Bootstrap erzeugt Jenkins-Jobs, keinen S3-Bestand.
 Vor der ersten Standardlieferung muss zusätzlich der administrative Root-Task
 `initializePublication` einen Gesamtstand mit `current.json` erzeugen.
 Standardjobs dafür pausieren und laufende Builds abwarten. Die vollständige
-link:https://codeberg.org/edigonzales/datenportal-dev-stack/src/branch/main/docs/biblios/entwicklung/inbetriebnahme.adoc[Stack-Inbetriebnahme]
+link:https://codeberg.org/edigonzales/datenportal-dev-stack/src/branch/main/docs/biblios/inbetriebnahme.adoc[Stack-Inbetriebnahme]
 beschreibt die beschreibbare Container-Arbeitskopie und optionale Katalogmigration.
 Bei vorhandenem Manifest ist die Initialisierung gesperrt. Ein späterer Seed
 aktualisiert keinen S3-Bestand; dafür Lieferung oder Repository-Abgleich starten.

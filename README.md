@@ -40,7 +40,7 @@ Der aktuelle Vertrag ist bewusst streng:
   `current.json`; zusätzlich freigegebenes Git-Rückschreiben betrifft nur das
   ausgewählte Datenblatt. Ein Portal-Reload ist optional.
   `initializePublication` im Root erzeugt administrativ den ersten Stand.
-  Details: [SQL-Lieferverarbeitung](docs/biblios/entwicklung/lieferverarbeitung.adoc).
+  Details: [SQL-Lieferverarbeitung](docs/biblios/lieferverarbeitung.adoc).
 - Die gemeinsame Datei `shared/gradle/datenportal-s3.gradle` stellt die
   zentrale S3-Konfiguration und `registerDatenportalS3Upload` für
   organisationsspezifische Upload-Tasks bereit. Endpoint und Credentials
@@ -69,13 +69,13 @@ dokumentiert.
 ### Neue Organisation anlegen
 
 Die Struktur, Pflichtfelder und ein minimales Beispiel sind in der Langform-Doku
-unter [docs/biblios/entwicklung/workflow-neue-organisation.adoc](docs/biblios/entwicklung/workflow-neue-organisation.adoc)
+unter [docs/biblios/workflow-neue-organisation.adoc](docs/biblios/workflow-neue-organisation.adoc)
 beschrieben.
 
 ### Neuen Datensatz anlegen
 
 Die Datensatzstruktur, Scan-Regeln und Validierungsgrenzen sind unter
-[docs/biblios/entwicklung/workflow-neuer-datensatz.adoc](docs/biblios/entwicklung/workflow-neuer-datensatz.adoc)
+[docs/biblios/workflow-neuer-datensatz.adoc](docs/biblios/workflow-neuer-datensatz.adoc)
 beschrieben.
 
 ### Build- und Offline-Vertrag pruefen
@@ -102,14 +102,14 @@ DATENPORTAL_OFFLINE_JARS_DIR="../datenportal-jenkins-dev/build/offline-bundle/ja
 ## Langform-Doku
 
 Die kanonische technische Doku liegt unter
-[docs/biblios/entwicklung/index.adoc](docs/biblios/entwicklung/index.adoc).
+[docs/biblios/index.adoc](docs/biblios/index.adoc).
 
 Empfohlene Einstiege:
 
-- [Zweck des Themenrepos](docs/biblios/entwicklung/zweck.adoc)
-- [Erwartete Repository-Struktur](docs/biblios/entwicklung/struktur.adoc)
-- [Gradle-Build-Vertrag](docs/biblios/entwicklung/gradle-build-vertrag.adoc)
-- [Offline-Bundle und Java-Laufzeiten](docs/biblios/entwicklung/offline-und-java.adoc)
+- [Zweck des Themenrepos](docs/biblios/zweck.adoc)
+- [Erwartete Repository-Struktur](docs/biblios/struktur.adoc)
+- [Gradle-Build-Vertrag](docs/biblios/gradle-build-vertrag.adoc)
+- [Offline-Bundle und Java-Laufzeiten](docs/biblios/offline-und-java.adoc)
 
 ## Schwester-Repositories
 
