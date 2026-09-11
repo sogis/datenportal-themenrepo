@@ -6,7 +6,7 @@ SELECT CASE WHEN EXISTS(SELECT 1 FROM sheets.datasetissue GROUP BY dataset_issue
 SELECT CASE WHEN NOT p.bootstrap AND NOT EXISTS(SELECT 1 FROM sheets.dataset WHERE identifier=p.dataset)
  THEN error('Selected datasheet missing after merge') ELSE true END FROM runtime.parameters p;
 CREATE TABLE runtime.selected AS
-SELECT d.t_id AS dataset_id,i.t_id AS issue_id,coalesce(i.model,d.model) AS model
+SELECT d.t_id AS dataset_id,i.t_id AS issue_id,runtime.text_or_parent(i.model,d.model) AS model
 FROM runtime.parameters p LEFT JOIN sheets.dataset d ON d.identifier=p.dataset
 LEFT JOIN sheets.datasetissue i ON p.has_data AND p.is_series AND i.dataset_issues=d.t_id AND i.issuelabel=p.issue;
 CREATE TABLE runtime.attributes AS

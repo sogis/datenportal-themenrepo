@@ -1,5 +1,9 @@
 -- Only local, non-secret invocation settings cross from Gradle into SQL.
 CREATE SCHEMA runtime;
+-- Leere optionale Ausgabetexte bedeuten «Serienwert verwenden». Nichtleere Texte
+-- bleiben unverändert; wir kürzen keine fachlich gewollten Abstände oder Absätze.
+CREATE MACRO runtime.text_or_parent(value, parent) AS
+ CASE WHEN value IS NULL OR regexp_full_match(value, '\s*') THEN parent ELSE value END;
 CREATE TABLE runtime.parameters AS
 SELECT * REPLACE (CAST(today AS DATE) AS today),
  dataset || '_issue_' || substr(sha256(issue),1,24) AS provisional_id,

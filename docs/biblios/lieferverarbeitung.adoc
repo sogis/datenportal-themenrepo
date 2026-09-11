@@ -48,11 +48,13 @@ benannten Tasks mit direkten Abhängigkeiten:
 . `copyDataExports` stellt die Datenexporte unter ihren vorgesehenen Dateinamen bereit.
 . `assemblePublication` führt `assemble.sql` und `result.sql` aus und erzeugt den vollständigen Ergebnisstand.
 . Gesamt-XTF und ausgewähltes Datenblatt mit `Ili2duckdbExport` exportieren und mit `IliValidator` validieren.
+. `copyOpendataInput` beziehungsweise `copyEmptyOpendataInput` stellt die RDF-Eingabe bereit; `transformOpendata` und `validateOpendata` transformieren und prüfen sie mit `XslTransformer`. `copyOpendataExport` legt den geprüften Export unter `outputs/opendata.rdf` ab.
 . Diff und Vorschauergebnis erzeugen; Veröffentlichungskandidaten mit `Copy` bereitstellen.
 . Bei Publikationsfreigabe S3-/Reload-Konfiguration prüfen und Datenexporte sowie neue Gesamt-XTF mit `S3Upload` hochladen.
 . Neue Gesamt-XTF mit `Download` öffentlich zurücklesen und byteweise vergleichen.
 . Bei zusätzlicher Git-Freigabe das ausgewählte Datenblatt committen/pushen.
-. `current.json` zuletzt mit `S3Upload` hochladen und die Übernahme zurücklesen.
+. `current.json` mit `S3Upload` hochladen und die Übernahme zurücklesen.
+. `uploadOpendata` veröffentlicht den festen Endpunkt `opendata.rdf`; `downloadOpendata` und `verifyOpendata` lesen öffentlich zurück und vergleichen die Bytes.
 . Optional das Portal mit GRETL `Curl` neu laden.
 
 `shared/gradle/datenportal-initialize.gradle` ergänzt ausschliesslich den
@@ -64,7 +66,7 @@ Die Schemas `repository`, `incoming`, `sheets`, `offices`, `previous`,
 `csv_input`/`data`, `runtime`, `merge_work`, `work` und `candidate` trennen
 Quellen, Arbeitsdaten und Ergebnisse. `Ili2duckdbImportSchema`,
 `Ili2duckdbImport`, `DuckDbSqlExecutor`, `Ili2duckdbExport`, `IliValidator`,
-`CsvValidator`, `Copy` und `S3Upload` übernehmen die einzelnen Schritte.
+`CsvValidator`, `XslTransformer`, `Copy` und `S3Upload` übernehmen die einzelnen Schritte.
 Die Abbildung bleibt an `shared/gradle/publication-models.json` gebunden.
 
 Normale Jobs lesen nur das ausgewählte Repository-Datenblatt zusätzlich zum
@@ -98,6 +100,70 @@ auch Formatierungsänderungen enthalten. Roundtrip-Tests prüfen fachlichen
 Inhalt, Reihenfolge und Kennungen statt Bytegleichheit zwischen zwei neuen
 Exporten. Der Vergleich des Uploadkandidaten mit seinem öffentlichen Rücklesen
 bleibt dagegen bytegenau.
+
+== opendata.swiss-RDF
+
+`shared/xsl/opendata/catalog.xsl` bildet den validierten PublishedCatalog auf
+RDF/XML für das heute dokumentierte
+link:https://handbook.opendata.swiss/de/content/glossar/bibliothek/dcat-ap-ch.html[opendata.swiss-Importprofil]
+ab. Es ist noch kein DCAT-AP CH V3-Serienexport. Eigenständige Datensätze und
+jede freigegebene Serienausgabe werden `dcat:Dataset`; Serienmütter erscheinen
+nicht zusätzlich. Ausschliesslich `published` wird exportiert. Bei Ausgaben
+müssen Ausgabe und Mutter freigegeben sein. `draft`, `in_review` und `archived`
+bleiben ausgeschlossen, auch wenn technische Lieferinformationen vorhanden sind.
+
+Die SQL-Materialisierung übernimmt fehlende, leere und reine Leerzeichenwerte
+vererbbarer Ausgabetexte aus der Serie. Ein fehlender Titel wird aus Serientitel
+und Ausgabe-Bezeichnung gebildet. Kennungen, Distributionen und angenommene
+Lieferdatumswerte bleiben ausgabenspezifisch. Das Stylesheet übernimmt diese
+fertigen Angaben, ohne die Serienvererbung nochmals auszuführen.
+
+Die kantonalen RDF-Konstanten stehen zentral im Stylesheet: Katalogtitel
+«Datenportal Kanton Solothurn», Beschreibung «Datensätze und Datenserien des
+Kantons Solothurn», Homepage `https://data.so.ch/`, Katalog-URI
+`https://data.so.ch/catalog/opendata`, Herausgeber «Kanton Solothurn» mit
+`https://so.ch/`, Organisationsslug `kanton_solothurn`, deutsche Textsprache und
+DEU-Vokabular-URI. Alle Distributionen verwenden
+`http://dcat-ap.ch/vocabulary/licenses/terms_open`. Änderungen an
+`shared/publication.properties` ändern diese RDF-Konstanten nicht automatisch.
+Der fachliche Ersteller und der Kontakt stammen weiterhin aus dem Katalog.
+
+Nur die Exportkennung wird mit `identifier.replace(".", "-") + "@kanton_solothurn"`
+gebildet. Andere unzulässige Zeichen und Kollisionen nach der Umformung führen
+zum Fehler. Interne Kennungen sowie Datensatz- und Distributions-URIs bleiben
+unverändert. Datensätze und Distributionen werden stabil sortiert.
+
+Der Export enthält Themen, Stichwörter, Landingpage, Lieferdatumswerte,
+Nachführungsfrequenz und zeitliche Abdeckung; ein Stichtag wird zum Zeitraum
+mit gleichem Beginn und Ende. CSV, XLSX und Parquet erhalten passende
+Dateityp- und IANA-Medientyp-URIs (`text/csv`,
+`application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`,
+`application/vnd.apache.parquet`). Bei `other` bleiben die vorhandenen Links
+erhalten, ohne unbekannte Formatangaben zu erfinden. Distributionen übernehmen
+`issued` und `modified` ihres Datensatzes. Fehlende erforderliche Angaben,
+insbesondere `issued`, lassen die Vorbereitung vor sämtlichen Uploads und
+Git-Schreiboperationen scheitern.
+
+`validate.xsl` prüft den gezielten Exportvertrag: Pflichtfelder, Kennungsformat,
+Eindeutigkeit, Beziehungen, Datumswerte und RDF-Strukturen. Die Transformation
+und Prüfung laufen offline mit GRETL/Saxon; es werden keine Vokabulare geladen.
+Die Tests lesen das RDF unabhängig mit RDFLib als Graph.
+
+Ohne Katalog (`catalog: null`) verwendet der Export ausschliesslich das dafür
+vorgesehene `empty.xml`. Ein unerwartet fehlender Katalog bleibt ein Fehler.
+Ein vollständig ausgefilterter Bestand erzeugt ebenfalls einen leeren
+RDF-Katalog. Dieser ersetzt bei Publikation den bisherigen Export. Das ist eine
+bewusste Ausnahme zur heutigen Mindestanforderung des Importprofils von einem
+Datensatz. Ob der tatsächliche Harvester dadurch bisherige Einträge entfernt,
+muss vor dessen Anschluss separat geprüft werden.
+
+`opendata.rdf` liegt relativ zur konfigurierten Manifestadresse im selben
+Bucket. Es gibt keine neue URL-Property und keinen zusätzlichen Manifestwert.
+Der Upload verwendet dieselbe S3-Konfiguration und `application/rdf+xml`.
+Der feste RDF-Endpunkt wird erst nach bestätigter XTF-Annahme aktualisiert und
+gehört nicht zur atomaren XTF-Umschaltung; kurzzeitig kann er den vorigen Stand
+enthalten. Vorschau und `preparePublication` erzeugen nur die lokale Datei.
+`working-tree` erlaubt bei S3-Freigabe auch diesen Upload, weiterhin ohne Git.
 
 == Verarbeitung auswählen
 
@@ -236,15 +302,20 @@ einen neuen S3-Gesamtstand verbindlich. Alte XTF-Versionen werden nicht gelösch
 * Fehler vor dem Umschalten lassen den bisherigen Verweis bestehen.
 * Git kann nach erfolgreichem Push und fehlgeschlagenem Umschalten bereits weiter sein.
 * Eine unklare PUT-Antwort wird durch Rücklesen geklärt; sonst lautet der Status `unknown`.
+* Ein RDF-Upload- oder Rücklesefehler nach der XTF-Annahme lässt diese bestehen und verhindert den Portal-Reload.
+* Eine verlorene RDF-PUT-Antwort wird durch erneuten Bytevergleich geklärt; ein nicht lesbares Ziel bleibt `unknown`.
 * Ein Reloadfehler rollt S3 nicht zurück; das Portal hält den alten Snapshot.
 * CSV/XLSX/Parquet behalten feste Dateinamen und können deshalb bereits vor dem
   Umschalten neue Daten enthalten. Die gemeinsame Übernahme gilt nur für die XTF.
 
-`outputs/` enthält XTF, Datenexporte, ausgewähltes Datenblatt unter `metadata/`,
+`outputs/` enthält XTF, `opendata.rdf`, Datenexporte, ausgewähltes Datenblatt unter `metadata/`,
 `current.json`, `metadata.patch`, `publication.patch` und `report.json`; neue XTF-Versionen liegen
 zusätzlich unter `release/`. Protokolle liegen unter `build/publication/`.
 Der Bericht dokumentiert Quell-/Ergebniskennung, Git-Revisionen, Vorschau,
-Publikation und Reload separat, auch bei Fehlern. Er ist keine Zustandsquelle.
+XTF-Publikation, Git, RDF und Reload separat, auch bei Fehlern.
+`opendata.status` ist `not-published`, `accepted` oder `unknown`;
+`opendata.datasetCount` und `opendata.url` nennen Anzahl und Adresse.
+Bei einer Vorschau bleibt der RDF-Status `not-published`, obwohl der lokale Export vorliegt. Er ist keine Zustandsquelle.
 
 == Tests und weitere Konfiguration
 
@@ -256,5 +327,6 @@ isolierten Bare-Repository. Bestehende Stack-Volumes bleiben unangetastet.
 
 Die link:https://codeberg.org/edigonzales/datenportal-jenkins-dev/src/branch/main/docs/biblios/entwicklung/referenz-konfiguration.adoc[zentrale Jenkins-Konfigurationsreferenz]
 beschreibt ENV-Defaults und Neustart-/Seeder-Verhalten.
-`catalog.duckdb` für Erkunden, opendata.swiss, automatische Wiederaufnahme und
+`catalog.duckdb` für Erkunden, der tatsächliche Harvester-Anschluss an opendata.swiss,
+die Umstellung auf DCAT-AP CH V3, automatische Wiederaufnahme und
 Bereinigung alter Versionen sind nicht Bestandteil dieses Ablaufs.

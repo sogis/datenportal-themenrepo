@@ -28,6 +28,12 @@ administrativen Erstaufbau bereit. Dieser Aufruf verwendet kein `-p` und
 keine Auswahl eines einzelnen Themas; er liest alle Repository-Datenblätter.
 Details und Schutz vor Überschreiben: xref:lieferverarbeitung.adoc[Lieferverarbeitung].
 
+`preparePublication` umfasst auch den geprüften RDF/XML-Export unter
+`outputs/opendata.rdf`. `publishToDatenportal` lädt ihn bei S3-Freigabe erst nach
+bestätigter XTF-Umschaltung hoch und prüft den öffentlichen Inhalt. Die konkreten
+`Copy`-, `XslTransformer`-, `S3Upload`- und `Download`-Tasks stehen im gemeinsamen
+`datenportal-publication.gradle`; die RDF-Abbildung liegt unter `shared/xsl/opendata/`.
+
 [source,text]
 ----
 agi/build.gradle

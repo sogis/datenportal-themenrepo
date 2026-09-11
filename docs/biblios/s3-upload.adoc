@@ -17,6 +17,12 @@ organisationsspezifischen `build.gradle` wiederholt werden.
 `shared/gradle/datenportal-s3.gradle` ein. Dieses gemeinsame Skript liest die
 S3-Properties zentral und stellt `registerDatenportalS3Upload` bereit.
 
+Der Standardjob verwendet konkret deklarierte Upload-Tasks. Er veröffentlicht
+nach bestätigter XTF-Umschaltung zusätzlich `opendata.rdf` mit
+`application/rdf+xml` und prüft den öffentlichen Inhalt byteweise.
+Ablauf, Filterung, Vorschau und getrennte Fehlerzustände stehen unter
+xref:lieferverarbeitung.adoc[Lieferverarbeitung].
+
 == Gradle-Properties
 
 Gradle übersetzt Umgebungsvariablen mit dem Präfix

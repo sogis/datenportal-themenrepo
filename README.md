@@ -38,7 +38,8 @@ Der aktuelle Vertrag ist bewusst streng:
 - Der Standardtask `publishToDatenportal` bereitet Lieferungen mit GRETL und
   SQL vor. Bei S3-Freigabe publiziert er vollständige Gesamt-XTF über
   `current.json`; zusätzlich freigegebenes Git-Rückschreiben betrifft nur das
-  ausgewählte Datenblatt. Ein Portal-Reload ist optional.
+  ausgewählte Datenblatt. Danach wird `opendata.rdf` für freigegebene Datensätze
+  und Serienausgaben aktualisiert; ein Portal-Reload ist optional.
   `initializePublication` im Root erzeugt administrativ den ersten Stand.
   Details: [SQL-Lieferverarbeitung](docs/biblios/lieferverarbeitung.adoc).
 - Die gemeinsame Datei `shared/gradle/datenportal-s3.gradle` stellt die

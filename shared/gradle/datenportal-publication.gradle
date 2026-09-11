@@ -27,6 +27,7 @@ def work = new File(buildDir, 'publication')
 def outputs = new File(work, 'outputs')
 def input = new File(work, 'input')
 def release = new File(work, 'release')
+def rdf = new File(outputs, 'opendata.rdf')
 def db = new File(work, 'publication.duckdb')
 def models = System.getenv('DATENPORTAL_MODELS_DIR') ?: new File(shared, 'models').path
 def sheetModel = 'SO_AGI_DataCatalog_Datasheet_20260523'
@@ -77,7 +78,8 @@ def nextManifest = providers.provider { manifest(json(new File(outputs,'current.
 def catalogInput = providers.provider { bootstrap ? initialCatalog != null : current.get().catalog != null }
 def report = [mode:'preview', dataset:ctx.selectedDataset, issue:ctx.seriesId, comment:ctx.comment,
     metadataFileName:ctx.metadataFileName,dataFileName:ctx.dataFileName,summaryLines:ctx.summaryLines,
-    publicationMode:ctx.publicationMode,releaseId:releaseId,git:'not-requested',publication:'not-published',reload:'not-requested',sourceFiles:[]]
+    publicationMode:ctx.publicationMode,releaseId:releaseId,git:'not-requested',publication:'not-published',reload:'not-requested',sourceFiles:[],
+    opendata:[status:'not-published',datasetCount:null,url:null]]
 // Die Git-Anbindung braucht dieselben Pfade und ergänzt denselben Ergebnisbericht.
 // Fachliche Zwischenergebnisse werden ausschliesslich über die SQL-Arbeitsdateien
 // gelesen. Die separate Schreibfreigabe verhindert Git-Änderungen bei Vorschauen
@@ -107,6 +109,18 @@ def readPointer = {
         .send(request,HttpResponse.BodyHandlers.ofString())
     [status:response.statusCode(),body:response.body()]
 }
+// Nur zur Klärung eines bereits versuchten RDF-Uploads: Auch eine verlorene
+// PUT-Antwort kann einen erfolgreichen Upload bedeuten. Ein frischer Bytevergleich
+// unterscheidet diesen Fall von einem alten Export. Ist das Ziel nicht lesbar,
+// bleibt der Ausgang unbekannt. Der normale Download bleibt ein eigener Task.
+def confirmRdf = {
+    def request = HttpRequest.newBuilder(URI.create(report.opendata.url)).timeout(Duration.ofSeconds(30))
+        .header('Cache-Control','no-cache, no-store').header('Accept-Encoding','identity').GET().build()
+    def response = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(10)).build()
+        .send(request,HttpResponse.BodyHandlers.ofByteArray())
+    response.statusCode()==200 ? (response.body()==rdf.bytes ? 'accepted' : 'not-published') :
+        (response.statusCode()==404 ? 'not-published' : 'unknown')
+}
 
 tasks.register('preparePublicationWorkspace') {
     doLast {
@@ -119,6 +133,7 @@ tasks.register('preparePublicationWorkspace') {
         }
         if (!manifestUrl) throw new GradleException('publicationManifestUrl is required.')
         def uri = URI.create(manifestUrl)
+        report.opendata.url = uri.resolve('opendata.rdf').toString()
         if (!(uri.scheme in ['http','https']) && !(localInput && !publish))
             throw new GradleException('Manifest must use HTTP(S); file inputs are only allowed for offline previews.')
         if (uri.userInfo || uri.query || uri.fragment) throw new GradleException('Manifest URL must not contain credentials, query or fragment.')
@@ -371,7 +386,44 @@ tasks.register('validatePublicationCatalog', IliValidator) {
     modelDirectories models; logFile new File(work,name+'.log')
     dependsOn 'validatePublicationSelected'; dataFiles new File(outputs,'published-catalog.xtf'); onlyIf { result.get().catalogPresent }
 }
-tasks.register('validatePublication') { dependsOn 'validatePublicationCatalog' }
+// Der Katalog wurde bereits mit ilivalidator geprüft. Ein katalogloser Erststand
+// erhält ausdrücklich ein technisches Leerdokument. Ein unerwartet fehlender
+// Katalog darf dagegen nicht als leerer RDF-Export weiterlaufen: Copy allein
+// würde eine fehlende Quelldatei ohne Fehler überspringen; XslTransformer verlangt
+// danach die konkrete Eingabedatei. Die getrennten Copy-Tasks verhindern ausserdem,
+// dass Gradle result.json schon beim Ermitteln der Task-Abhängigkeiten lesen muss.
+tasks.register('copyOpendataInput', Copy) {
+    dependsOn 'validatePublicationCatalog'
+    from new File(outputs,'published-catalog.xtf')
+    into new File(work,'opendata/input'); rename { 'opendata.xml' }
+    onlyIf { result.get().catalogPresent }
+}
+tasks.register('copyEmptyOpendataInput', Copy) {
+    dependsOn 'copyOpendataInput'
+    from new File(shared,'xsl/opendata/empty.xml')
+    into new File(work,'opendata/input'); rename { 'opendata.xml' }
+    onlyIf { !result.get().catalogPresent }
+}
+tasks.register('transformOpendata', XslTransformer) {
+    dependsOn 'copyEmptyOpendataInput'
+    xmlFiles new File(work,'opendata/input/opendata.xml')
+    xslFile new File(shared,'xsl/opendata/catalog.xsl')
+    outDirectory new File(work,'opendata/generated'); fileExtension 'rdf'
+}
+tasks.register('validateOpendata', XslTransformer) {
+    dependsOn 'transformOpendata'
+    xmlFiles new File(work,'opendata/generated/opendata.rdf')
+    xslFile new File(shared,'xsl/opendata/validate.xsl')
+    outDirectory new File(work,'opendata/validation'); fileExtension 'json'
+}
+tasks.register('copyOpendataExport', Copy) {
+    dependsOn 'validateOpendata'
+    from new File(work,'opendata/generated/opendata.rdf'); into outputs
+    // Erst die erfolgreiche Prüfung liefert die Anzahl. Groovy liest nur dieses
+    // kleine Prüfergebnis; Auswahl und RDF-Abbildung bleiben in SQL bzw. XSLT.
+    doLast { report.opendata.datasetCount=json(new File(work,'opendata/validation/opendata.json')).datasetCount }
+}
+tasks.register('validatePublication') { dependsOn 'copyOpendataExport' }
 apply from: new File(shared,'gradle/datenportal-git.gradle')
 tasks.register('preparePublication') {
     dependsOn 'createPublicationDiff'
@@ -464,11 +516,33 @@ tasks.register('uploadCurrentManifest', S3Upload) {
         report.publication='accepted'; report.mode='accepted'; writeReport()
     }
 }
-// Die drei ausdrücklich benannten Upload-Tasks verwenden dieselbe S3-Konfiguration.
+// opendata.rdf folgt erst nach der bestätigten XTF-Umschaltung. Die feste Datei
+// gehört deshalb nicht ins vorab hochgeladene release-Verzeichnis. Ein RDF-Fehler
+// nimmt den XTF-Stand nicht zurück, verhindert aber den nachfolgenden Portal-Reload.
+tasks.register('uploadOpendata', S3Upload) {
+    dependsOn 'uploadCurrentManifest'; sourceFile rdf; contentType 'application/rdf+xml'; onlyIf { publish }
+    doFirst { report.opendata.attempted=true; report.opendata.status='unknown'; writeReport() }
+}
+tasks.register('downloadOpendata', Download) {
+    dependsOn 'uploadOpendata'
+    src { report.opendata.url }; dest new File(work,'readback/opendata.rdf')
+    overwrite true; tempAndMove true; compress false; retries 3
+    header 'Accept-Encoding','identity'; header 'Cache-Control','no-cache, no-store'
+    getOutputs().upToDateWhen { false }; setOnlyIf { publish }
+}
+tasks.register('verifyOpendata') {
+    dependsOn 'downloadOpendata'; onlyIf { publish }
+    doLast {
+        if (rdf.bytes != new File(work,'readback/opendata.rdf').bytes)
+            throw new GradleException('RDF-Export: Öffentliches Rücklesen stimmt nicht mit opendata.rdf überein.')
+        report.opendata.status='accepted'; writeReport()
+    }
+}
+// Die ausdrücklich benannten Upload-Tasks verwenden dieselbe S3-Konfiguration.
 // checkPublicationTarget prüft sie einmal vor dem ersten Upload. Leere Platzhalter
 // erlauben, den Taskablauf auch ohne Credentials für eine Vorschau zu konfigurieren.
 // Diese Schleife setzt nur gemeinsame Eigenschaften; sie erzeugt keine neuen Tasks.
-[ tasks.named('uploadDataExports'), tasks.named('uploadPublicationFiles'), tasks.named('uploadCurrentManifest') ].each { upload ->
+[ tasks.named('uploadDataExports'), tasks.named('uploadPublicationFiles'), tasks.named('uploadCurrentManifest'), tasks.named('uploadOpendata') ].each { upload ->
     upload.configure {
         def s3=project.ext.datenportalS3
         endpoint=s3.endpoint ?: ''; region=s3.region ?: ''; bucketName=s3.bucketName ?: ''
@@ -477,7 +551,7 @@ tasks.register('uploadCurrentManifest', S3Upload) {
     }
 }
 tasks.register('reloadPortal', Curl) {
-    dependsOn 'uploadCurrentManifest'
+    dependsOn 'verifyOpendata'
     serverUrl (findProperty('portalReloadUrl') ?: 'http://invalid.invalid/admin/catalog/reload').toString()
     method 'POST'; expectedStatusCode 200
     headers(['X-Reload-Token':(findProperty('portalReloadToken') ?: '').toString()])
@@ -508,6 +582,10 @@ gradle.buildFinished { outcome ->
         } catch (Exception ignored) { report.publication='unknown' }
     }
     if (report.publication=='accepted') report.mode='accepted'
+    if (report.opendata.attempted && report.opendata.status!='accepted') {
+        try { report.opendata.status=confirmRdf() }
+        catch (Exception ignored) { report.opendata.status='unknown' }
+    }
     if (outcome.failure) report.failed=true
     writeReport()
 }

@@ -11,10 +11,10 @@ UNION ALL
 SELECT 'I', d.identifier, i.issuelabel, d.t_id, i.t_id,
        CASE WHEN d.publicationstatus='published' THEN i.publicationstatus ELSE d.publicationstatus END,
        i.iscurrentissue, d.creatorref, d.accesslevel, coalesce(i.accrualperiodicity,d.accrualperiodicity),
-       i.identifier, coalesce(i.title,d.title||' '||i.issuelabel), coalesce(i.adescription,d.adescription),
-       i.issued, coalesce(i.modified,d.modified), coalesce(i.model,d.model),
-       coalesce(i.surveymethod,d.surveymethod), coalesce(i.dataavailablefrom,d.dataavailablefrom),
-       coalesce(i.furtheruses,d.furtheruses), coalesce(i.auxiliarydata,d.auxiliarydata)
+       i.identifier, runtime.text_or_parent(i.title,d.title||' '||i.issuelabel), runtime.text_or_parent(i.adescription,d.adescription),
+       i.issued, coalesce(i.modified,d.modified), runtime.text_or_parent(i.model,d.model),
+       runtime.text_or_parent(i.surveymethod,d.surveymethod), runtime.text_or_parent(i.dataavailablefrom,d.dataavailablefrom),
+       runtime.text_or_parent(i.furtheruses,d.furtheruses), runtime.text_or_parent(i.auxiliarydata,d.auxiliarydata)
 FROM sheets.datasetissue i JOIN sheets.dataset d ON i.dataset_issues=d.t_id;
 -- A missing issue is retained in the catalog, never inserted into the datasheet.
 INSERT INTO work.current
