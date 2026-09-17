@@ -14,12 +14,13 @@ Versionen und unvollständige Verweise sind Fehler.
   "schemaVersion": 1,
   "releaseId": "beispiel-123",
   "datasheets": "datasheets-beispiel-123.xtf",
-  "catalog": "published-catalog-beispiel-123.xtf"
+  "catalog": "published-catalog-beispiel-123.xtf",
+  "duckdb": "catalog-beispiel-123.duckdb"
 }
 ----
 
 `releaseId` besteht aus 1–128 ASCII-Buchstaben, Ziffern, Bindestrichen oder
-Unterstrichen und beginnt alphanumerisch. Die beiden Dateinamen müssen genau
+Unterstrichen und beginnt alphanumerisch. Die Dateinamen müssen genau
 dieser Kennung entsprechen. `catalog` darf ausdrücklich `null` sein, solange
 noch kein vollständiger Katalog vorliegt. Fehlende Dateien und beschädigte
 XTF werden nicht als leerer Ausgangsstand behandelt.
@@ -46,12 +47,13 @@ benannten Tasks mit direkten Abhängigkeiten:
 . `mergeDatasheets` führt `parameters.sql`, `merge-datasheets.sql` und `delivery.sql` aus.
 . CSV gegebenenfalls mit `CsvValidator` prüfen; `convertDeliveredCsv` erzeugt die typisierten Daten und XLSX/Parquet.
 . `copyDataExports` stellt die Datenexporte unter ihren vorgesehenen Dateinamen bereit.
-. `assemblePublication` führt `assemble.sql` und `result.sql` aus und erzeugt den vollständigen Ergebnisstand.
+. `assemblePublication` führt `assemble.sql` aus; `preparePlaygroundCatalog` erzeugt anschliessend View-SQL und `result.json`.
 . Gesamt-XTF und ausgewähltes Datenblatt mit `Ili2duckdbExport` exportieren und mit `IliValidator` validieren.
 . `copyOpendataInput` beziehungsweise `copyEmptyOpendataInput` stellt die RDF-Eingabe bereit; `transformOpendata` und `validateOpendata` transformieren und prüfen sie mit `XslTransformer`. `copyOpendataExport` legt den geprüften Export unter `outputs/opendata.rdf` ab.
 . Diff und Vorschauergebnis erzeugen; Veröffentlichungskandidaten mit `Copy` bereitstellen.
-. Bei Publikationsfreigabe S3-/Reload-Konfiguration prüfen und Datenexporte sowie neue Gesamt-XTF mit `S3Upload` hochladen.
-. Neue Gesamt-XTF mit `Download` öffentlich zurücklesen und byteweise vergleichen.
+. Bei Publikationsfreigabe S3-/Reload-Konfiguration prüfen und Datenexporte hochladen.
+. `createPlaygroundCatalog` erzeugt und prüft die DuckDB anhand der erreichbaren Parquet-Dateien.
+. Versionierte DuckDB und Gesamt-XTF mit `S3Upload` hochladen, mit `Download` öffentlich zurücklesen und byteweise vergleichen.
 . Bei zusätzlicher Git-Freigabe das ausgewählte Datenblatt committen/pushen.
 . `current.json` mit `S3Upload` hochladen und die Übernahme zurücklesen.
 . `uploadOpendata` veröffentlicht den festen Endpunkt `opendata.rdf`; `downloadOpendata` und `verifyOpendata` lesen öffentlich zurück und vergleichen die Bytes.
@@ -100,6 +102,46 @@ auch Formatierungsänderungen enthalten. Roundtrip-Tests prüfen fachlichen
 Inhalt, Reihenfolge und Kennungen statt Bytegleichheit zwischen zwei neuen
 Exporten. Der Vergleich des Uploadkandidaten mit seinem öffentlichen Rücklesen
 bleibt dagegen bytegenau.
+
+== DuckDB-Katalog für Erkunden
+
+`preparePlaygroundCatalog` erzeugt nach `assemblePublication` mit
+`DuckDbSqlExecutor` und `shared/sql/publication/playground.sql` die Datei
+`outputs/catalog-views.sql`. SQL wählt Parquet-Distributionen veröffentlichter
+Datensätze und veröffentlichter Ausgaben veröffentlichter Serien aus, auch
+historische Ausgaben. Serien erhalten keine zusätzlichen Alias-Views.
+Der View-Name ist der URL-Dateiname ohne `.parquet`, mit Unterstrichen statt
+Punkten. Ungültige Bezeichner, nicht absolute HTTP(S)-URLs und auch bei
+unterschiedlicher Gross-/Kleinschreibung kollidierende Namen sind Fehler.
+
+Die Vorschau und `preparePublication` erzeugen ausschliesslich dieses geprüfte
+SQL, ohne Parquet-Zugriff und ohne S3-Schreibzugriff. Erst bei Publikation läuft
+`createPlaygroundCatalog` nach `uploadDataExports`: Eine frische
+`outputs/catalog.duckdb` erhält `opendata`-Views mit `read_parquet` auf die
+endgültigen Download-URLs. Die Arbeitsdatenbank `publication.duckdb` wird niemals
+publiziert. Ein leerer öffentlicher Bestand, auch `catalog: null`, erzeugt eine
+gültige Datenbank mit leerem `opendata`-Schema.
+
+DuckDB bindet Parquet-Dateien bereits bei `CREATE VIEW`. Deshalb müssen alle
+referenzierten öffentlichen Dateien aus der GRETL-Laufzeit erreichbar sein;
+`httpfs` muss passend zur DuckDB-Version vorinstalliert sein. Der Job lädt die
+Extension mit `LOAD`, ohne Installation während des Builds. Der Dev-Stack
+stellt für seine `localhost`-URLs einen lokalen Jenkins-Proxy bereit.
+
+`uploadPlaygroundCatalog` lädt `catalog-<releaseId>.duckdb` separat mit
+`application/octet-stream` hoch. XML-Dateien behalten ihren XML-Content-Type.
+Vor Git-Rückschreiben und Manifestumschaltung werden alle Kandidaten öffentlich
+zurückgelesen und bytegenau geprüft. Neue Manifeste behalten `schemaVersion: 1`
+und ergänzen zwingend `duckdb: "catalog-<releaseId>.duckdb"`. Der Eingangsleser
+akzeptiert ältere Manifeste ohne dieses Feld; vorhandene Werte müssen exakt
+zur Release-ID passen. Ein regulärer Publikationslauf übernimmt den Altstand
+und schreibt den erweiterten Vertrag; keine Neuinitialisierung ist nötig.
+
+`report.json` enthält `duckdb.fileName`, `duckdb.viewCount` und `duckdb.status`:
+`not-prepared`, `sql-prepared`, `creating`, `validated` oder `verified`.
+`verified` belegt das öffentliche Rücklesen; ob das Manifest angenommen wurde,
+steht weiterhin in `publication`. Ein Fehler vor Umschaltung erhält den alten
+Verweis, kann aber bereits überschriebene Parquet-Dateien nicht zurückrollen.
 
 == opendata.swiss-RDF
 
@@ -297,7 +339,7 @@ Dev-Git-Schreibtests bleiben auf lokale `file://`-Remotes beschränkt.
 
 Die Pipeline hält `datenportal-topic-repository` vom Checkout bis zum Ende des
 Gradle-Aufrufs inklusive Reload. Nur das Umschalten von `current.json` macht
-einen neuen S3-Gesamtstand verbindlich. Alte XTF-Versionen werden nicht gelöscht.
+einen neuen S3-Gesamtstand verbindlich. Alte XTF- und DuckDB-Versionen werden nicht gelöscht.
 
 * Fehler vor dem Umschalten lassen den bisherigen Verweis bestehen.
 * Git kann nach erfolgreichem Push und fehlgeschlagenem Umschalten bereits weiter sein.
@@ -306,9 +348,9 @@ einen neuen S3-Gesamtstand verbindlich. Alte XTF-Versionen werden nicht gelösch
 * Eine verlorene RDF-PUT-Antwort wird durch erneuten Bytevergleich geklärt; ein nicht lesbares Ziel bleibt `unknown`.
 * Ein Reloadfehler rollt S3 nicht zurück; das Portal hält den alten Snapshot.
 * CSV/XLSX/Parquet behalten feste Dateinamen und können deshalb bereits vor dem
-  Umschalten neue Daten enthalten. Die gemeinsame Übernahme gilt nur für die XTF.
+  Umschalten neue Daten enthalten. Die gemeinsame Übernahme gilt für XTF und DuckDB, nicht für die Nutzdaten.
 
-`outputs/` enthält XTF, `opendata.rdf`, Datenexporte, ausgewähltes Datenblatt unter `metadata/`,
+`outputs/` enthält XTF, View-SQL, bei Publikation `catalog.duckdb`, `opendata.rdf`, Datenexporte, ausgewähltes Datenblatt unter `metadata/`,
 `current.json`, `metadata.patch`, `publication.patch` und `report.json`; neue XTF-Versionen liegen
 zusätzlich unter `release/`. Protokolle liegen unter `build/publication/`.
 Der Bericht dokumentiert Quell-/Ergebniskennung, Git-Revisionen, Vorschau,
@@ -327,6 +369,6 @@ isolierten Bare-Repository. Bestehende Stack-Volumes bleiben unangetastet.
 
 Die link:https://codeberg.org/edigonzales/datenportal-jenkins-dev/src/branch/main/docs/biblios/entwicklung/referenz-konfiguration.adoc[zentrale Jenkins-Konfigurationsreferenz]
 beschreibt ENV-Defaults und Neustart-/Seeder-Verhalten.
-`catalog.duckdb` für Erkunden, der tatsächliche Harvester-Anschluss an opendata.swiss,
+Der tatsächliche Harvester-Anschluss an opendata.swiss,
 die Umstellung auf DCAT-AP CH V3, automatische Wiederaufnahme und
 Bereinigung alter Versionen sind nicht Bestandteil dieses Ablaufs.

@@ -37,7 +37,8 @@ Der aktuelle Vertrag ist bewusst streng:
   `shared/gretl-datenportal-teams.yaml`.
 - Der Standardtask `publishToDatenportal` bereitet Lieferungen mit GRETL und
   SQL vor. Bei S3-Freigabe publiziert er vollständige Gesamt-XTF über
-  `current.json`; zusätzlich freigegebenes Git-Rückschreiben betrifft nur das
+  `current.json`; der versionierte DuckDB-View-Katalog wird gemeinsam mit den XTF freigegeben.
+  Zusätzlich freigegebenes Git-Rückschreiben betrifft nur das
   ausgewählte Datenblatt. Danach wird `opendata.rdf` für freigegebene Datensätze
   und Serienausgaben aktualisiert; ein Portal-Reload ist optional.
   `initializePublication` im Root erzeugt administrativ den ersten Stand.

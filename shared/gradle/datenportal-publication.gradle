@@ -28,6 +28,7 @@ def outputs = new File(work, 'outputs')
 def input = new File(work, 'input')
 def release = new File(work, 'release')
 def rdf = new File(outputs, 'opendata.rdf')
+def playground = new File(outputs, 'catalog.duckdb')
 def db = new File(work, 'publication.duckdb')
 def models = System.getenv('DATENPORTAL_MODELS_DIR') ?: new File(shared, 'models').path
 def sheetModel = 'SO_AGI_DataCatalog_Datasheet_20260523'
@@ -37,8 +38,8 @@ def publish = (findProperty('s3Publish') ?: 'false').toString() == 'true'
 def reload = (findProperty('reloadPortal') ?: 'false').toString() == 'true'
 def manifestUrl = (findProperty('publicationManifestUrl') ?: '').toString().trim()
 def localInput = manifestUrl.startsWith('file:')
-// Eindeutige XTF-Dateinamen erlauben, beide Kandidaten vollständig hochzuladen,
-// während current.json noch auf das bisherige Dateipaar zeigt. CSV/XLSX/Parquet
+// Eindeutige Dateinamen erlauben, XTF und DuckDB vollständig hochzuladen,
+// während current.json noch auf die bisherige Veröffentlichung zeigt. CSV/XLSX/Parquet
 // behalten ihre festen Namen und sind von dieser gemeinsamen Umschaltung ausgenommen.
 def releaseId = UUID.randomUUID().toString()
 def initialCatalog = findProperty('initialCatalog') ? file(findProperty('initialCatalog')) : null
@@ -53,7 +54,7 @@ def writeJson = { File f, value -> f.text = JsonOutput.prettyPrint(JsonOutput.to
 def quote = { value -> "'" + value.toString().replace("'", "''") + "'" }
 def sqlPaths = [parameters_file:quote(new File(work,'parameters.json')),
     mappings_file:quote(new File(work,'mappings.json')),control_file:quote(new File(work,'delivery.json')),
-    result_file:quote(new File(work,'result.json'))]
+    result_file:quote(new File(work,'result.json')),playground_sql:quote(new File(outputs,'catalog-views.sql'))]
 // Das Manifest ist der gemeinsame Vertrag mit Portal und Editor. Die Bindung der
 // Dateinamen an releaseId schliesst fremde URLs und Pfadwechsel aus. catalog:null
 // ist ein gültiger Erststand ohne technische Lieferdaten; ein fehlendes Feld oder
@@ -62,7 +63,8 @@ def manifest = { value ->
     if (!(value instanceof Map) || value.schemaVersion != 1 || !(value.releaseId instanceof String)
         || !(value.releaseId ==~ /[A-Za-z0-9][A-Za-z0-9_-]{0,127}/)
         || value.datasheets != "datasheets-${value.releaseId}.xtf" || !value.containsKey('catalog')
-        || !(value.catalog == null || value.catalog == "published-catalog-${value.releaseId}.xtf"))
+        || !(value.catalog == null || value.catalog == "published-catalog-${value.releaseId}.xtf")
+        || (value.containsKey('duckdb') && value.duckdb != "catalog-${value.releaseId}.duckdb"))
         throw new GradleException('Invalid publication manifest (schemaVersion, releaseId or filenames).')
     value
 }
@@ -79,6 +81,7 @@ def catalogInput = providers.provider { bootstrap ? initialCatalog != null : cur
 def report = [mode:'preview', dataset:ctx.selectedDataset, issue:ctx.seriesId, comment:ctx.comment,
     metadataFileName:ctx.metadataFileName,dataFileName:ctx.dataFileName,summaryLines:ctx.summaryLines,
     publicationMode:ctx.publicationMode,releaseId:releaseId,git:'not-requested',publication:'not-published',reload:'not-requested',sourceFiles:[],
+    duckdb:[status:'not-prepared',fileName:"catalog-${releaseId}.duckdb",viewCount:null],
     opendata:[status:'not-published',datasetCount:null,url:null]]
 // Die Git-Anbindung braucht dieselben Pfade und ergänzt denselben Ergebnisbericht.
 // Fachliche Zwischenergebnisse werden ausschliesslich über die SQL-Arbeitsdateien
@@ -355,14 +358,24 @@ tasks.register('copyDataExports', Copy) {
 tasks.register('assemblePublication', DuckDbSqlExecutor) {
     database db; installExtensions false; sqlParameters sqlPaths; getOutputs().upToDateWhen { false }
     dependsOn 'copyDataExports'
-    sqlFiles new File(shared,'sql/publication/assemble.sql'),new File(shared,'sql/publication/result.sql')
+    sqlFiles new File(shared,'sql/publication/assemble.sql')
+}
+tasks.register('preparePlaygroundCatalog', DuckDbSqlExecutor) { task ->
+    dependsOn 'assemblePublication'
+    database db; installExtensions false; sqlParameters sqlPaths
+    sqlFiles(new File(shared,'sql/publication/playground.sql'),new File(shared,'sql/publication/result.sql'))
+    task.getOutputs().upToDateWhen { false }
+    doLast {
+        report.duckdb.viewCount=result.get().playgroundViewCount
+        report.duckdb.status='sql-prepared'
+    }
 }
 // Kennungen und Beziehungen wurden in SQL gesetzt. Die Exporte werden direkt
 // validiert und weiterverwendet; Präfixe und Formatierung verantwortet der Exporter.
 // Der Einzelexport ist für das Git-Rückschreiben bestimmt, die Gesamtdateien für S3.
 tasks.register('exportDatasheets', Ili2duckdbExport) {
     databaseFile db; modelDirectories models
-    dependsOn 'assemblePublication'; schema 'sheets'; modelNames sheetModel; dataFiles new File(outputs,'datasheets.xtf')
+    dependsOn 'preparePlaygroundCatalog'; schema 'sheets'; modelNames sheetModel; dataFiles new File(outputs,'datasheets.xtf')
 }
 tasks.register('exportSelectedDatasheet', Ili2duckdbExport) {
     databaseFile db; modelDirectories models
@@ -443,7 +456,7 @@ tasks.register('stagePublication', Copy) {
     from(new File(outputs,'published-catalog.xtf')) { rename { "published-catalog-${releaseId}.xtf" } }
     doLast {
         writeJson(new File(outputs,'current.json'),[schemaVersion:1,releaseId:releaseId,
-            datasheets:"datasheets-${releaseId}.xtf",catalog:result.get().catalogPresent ? "published-catalog-${releaseId}.xtf" : null])
+            datasheets:"datasheets-${releaseId}.xtf",duckdb:"catalog-${releaseId}.duckdb",catalog:result.get().catalogPresent ? "published-catalog-${releaseId}.xtf" : null])
     }
 }
 tasks.register('checkPublicationTarget') {
@@ -459,8 +472,26 @@ tasks.register('uploadDataExports', S3Upload) {
     sourceFiles fileTree(outputs) { include '*.csv','*.xlsx','*.parquet' }
     onlyIf { publish && !!ctx.dataFile }
 }
+tasks.register('createPlaygroundCatalog', DuckDbSqlExecutor) { task ->
+    dependsOn 'uploadDataExports'
+    database playground; installExtensions false
+    sqlFiles(new File(outputs,'catalog-views.sql'))
+    task.getOutputs().upToDateWhen { false }; onlyIf { publish }
+    doFirst { report.duckdb.status='creating'; writeReport() }
+    doLast { report.duckdb.status='validated'; writeReport() }
+}
+tasks.register('stagePlaygroundCatalog', Copy) {
+    dependsOn 'createPlaygroundCatalog'; onlyIf { publish }
+    from playground; into new File(work,'duckdb-release')
+    rename { "catalog-${releaseId}.duckdb" }
+}
+tasks.register('uploadPlaygroundCatalog', S3Upload) {
+    dependsOn 'stagePlaygroundCatalog'
+    sourceFile new File(work,"duckdb-release/catalog-${releaseId}.duckdb")
+    contentType 'application/octet-stream'; onlyIf { publish }
+}
 tasks.register('uploadPublicationFiles', S3Upload) {
-    dependsOn 'uploadDataExports'; sourceDir release; contentType 'application/xml'; onlyIf { publish }
+    dependsOn 'uploadPlaygroundCatalog'; sourceDir release; contentType 'application/xml'; onlyIf { publish }
     doLast { report.publication='candidates-uploaded'; writeReport() }
 }
 tasks.register('downloadCandidateDatasheets', Download) {
@@ -479,8 +510,16 @@ tasks.register('downloadCandidateCatalog', Download) {
     src { nextManifest.get().catalog ? URI.create(manifestUrl).resolve(nextManifest.get().catalog).toString() : [] }
     dest new File(work,'readback/catalog.xtf'); retries 3; setOnlyIf { publish && result.get().catalogPresent }
 }
+tasks.register('downloadCandidateDuckdb', Download) { task ->
+    dependsOn 'uploadPublicationFiles'
+    src { URI.create(manifestUrl).resolve(nextManifest.get().duckdb).toString() }
+    dest new File(work,'readback/catalog.duckdb')
+    overwrite true; tempAndMove true; compress false; retries 3
+    header 'Accept-Encoding','identity'; header 'Cache-Control','no-cache, no-store'
+    task.getOutputs().upToDateWhen { false }; setOnlyIf { publish }
+}
 tasks.register('verifyPublicationCandidates') {
-    dependsOn 'downloadCandidateDatasheets','downloadCandidateCatalog'; onlyIf { publish }
+    dependsOn 'downloadCandidateDatasheets','downloadCandidateCatalog','downloadCandidateDuckdb'; onlyIf { publish }
     doLast {
         // Eine erfolgreiche S3-Antwort allein belegt noch nicht, dass Leser die neuen
         // Dateien am konfigurierten öffentlichen Ziel erhalten. Vor Git und Umschaltung
@@ -490,6 +529,9 @@ tasks.register('verifyPublicationCandidates') {
             if (new File(release,nextManifest.get()[key]).bytes != new File(work,'readback/'+key+'.xtf').bytes)
                 throw new GradleException('Public XTF readback differs: '+key)
         }
+        if (playground.bytes != new File(work,'readback/catalog.duckdb').bytes)
+            throw new GradleException('Public DuckDB readback differs.')
+        report.duckdb.status='verified'; writeReport()
     }
 }
 tasks.named('commitAndPushMetadata') { dependsOn 'verifyPublicationCandidates' }
@@ -542,7 +584,7 @@ tasks.register('verifyOpendata') {
 // checkPublicationTarget prüft sie einmal vor dem ersten Upload. Leere Platzhalter
 // erlauben, den Taskablauf auch ohne Credentials für eine Vorschau zu konfigurieren.
 // Diese Schleife setzt nur gemeinsame Eigenschaften; sie erzeugt keine neuen Tasks.
-[ tasks.named('uploadDataExports'), tasks.named('uploadPublicationFiles'), tasks.named('uploadCurrentManifest'), tasks.named('uploadOpendata') ].each { upload ->
+[ tasks.named('uploadDataExports'), tasks.named('uploadPlaygroundCatalog'), tasks.named('uploadPublicationFiles'), tasks.named('uploadCurrentManifest'), tasks.named('uploadOpendata') ].each { upload ->
     upload.configure {
         def s3=project.ext.datenportalS3
         endpoint=s3.endpoint ?: ''; region=s3.region ?: ''; bucketName=s3.bucketName ?: ''
