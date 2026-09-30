@@ -1,12 +1,15 @@
 schemaVersion: 1
-title: Wahlresultate – Hello World
+title: Abstimmungsresultate – eCH-0252
 description: >-
-  Hello-World-Pilot. Die XML-Datei wird nicht ausgewertet.
-  Eine vorhandene hello-world.csv im Ausgabeordner wird ersetzt.
+  eCH-0252-v1-XML prüfen und eidgenössische sowie kantonale Abstimmungen als CSV
+  mit einer Zeile pro Geschäftskomponente und Gemeinde aufbereiten.
+  Reine Gemeindeabstimmungen werden ausgefiltert. Stichfragen erhalten eigene Stimmenfelder.
+  Nach erfolgreicher Prüfung wird abstimmungsresultate_<Abstimmungstag>.csv
+  im Ausgabeordner ersetzt.
 outputDirectoryParameter: OUTPUT_DIR
 parameters:
   INPUT_XML:
-    label: XML-Datei
+    label: eCH-0252-v1-XML
     type: file
     required: true
     extensions: [xml]
