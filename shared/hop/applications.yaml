@@ -1,0 +1,5 @@
+schemaVersion: 1
+applications:
+  - id: staatskanzlei.wahlresultate
+    entrypoint: staatskanzlei/wahlresultate/wahlresultate.hpl
+    sidecar: staatskanzlei/wahlresultate/wahlresultate.launcher.yaml
