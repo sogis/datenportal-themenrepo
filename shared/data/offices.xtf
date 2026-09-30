@@ -66,6 +66,14 @@
         <SO_AGI_DataCatalog_Base_20260529:email>mailto:arp@bd.so.ch</SO_AGI_DataCatalog_Base_20260529:email>
         <SO_AGI_DataCatalog_Base_20260529:officeAtWeb>https://so.ch/verwaltung/bau-und-justizdepartement/amt-fuer-raumplanung/ueber-uns/</SO_AGI_DataCatalog_Base_20260529:officeAtWeb>
       </SO_AGI_DataCatalog_Base_20260529:Office.Office>
+      <SO_AGI_DataCatalog_Base_20260529:Office.Office ili:tid="ch.so.sk">
+        <SO_AGI_DataCatalog_Base_20260529:identifier>ch.so.sk</SO_AGI_DataCatalog_Base_20260529:identifier>
+        <SO_AGI_DataCatalog_Base_20260529:name>Staatskanzlei</SO_AGI_DataCatalog_Base_20260529:name>
+        <SO_AGI_DataCatalog_Base_20260529:abbreviation>STK</SO_AGI_DataCatalog_Base_20260529:abbreviation>
+        <SO_AGI_DataCatalog_Base_20260529:phoneNumber>032 627 20 21</SO_AGI_DataCatalog_Base_20260529:phoneNumber>
+        <SO_AGI_DataCatalog_Base_20260529:email>mailto:kanzlei@sk.so.ch</SO_AGI_DataCatalog_Base_20260529:email>
+        <SO_AGI_DataCatalog_Base_20260529:officeAtWeb>https://so.ch/verwaltung/staatskanzlei/</SO_AGI_DataCatalog_Base_20260529:officeAtWeb>
+      </SO_AGI_DataCatalog_Base_20260529:Office.Office>
     </SO_AGI_DataCatalog_Base_20260529:Office>
   </ili:datasection>
 </ili:transfer>
