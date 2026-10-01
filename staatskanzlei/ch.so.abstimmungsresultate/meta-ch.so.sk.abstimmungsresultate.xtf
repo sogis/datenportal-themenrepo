@@ -311,7 +311,6 @@
             <base:mandatory>false</base:mandatory>
           </base:DatasetAttribute>
         </attributes>
-        <model>eCH-0252 Version 1; flaches CSV-Schema der Hop-Pipeline</model>
       </Dataset>
     </Metadata>
   </ili:datasection>
