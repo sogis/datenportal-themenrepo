@@ -592,19 +592,35 @@ tasks.register('verifyOpendata') {
         getOutputs().upToDateWhen { false }
     }
 }
-tasks.register('reloadPortal', Curl) {
+tasks.register('reloadPortal', Curl) { reloadTask ->
     dependsOn 'verifyOpendata'
     serverUrl (findProperty('portalReloadUrl') ?: 'http://invalid.invalid/admin/catalog/reload').toString()
     method 'POST'; expectedStatusCode 200
     headers(['X-Reload-Token':(findProperty('portalReloadToken') ?: '').toString()])
-    outputFile new File(outputs,'reload-response.json'); onlyIf { publish && reload }
+    outputFile new File(outputs,'reload-response.json')
+    // Ein Reload hat eine externe Wirkung und muss bei jedem angeforderten Lauf
+    // ausgeführt werden, auch wenn die Antwortdatei des letzten Laufs existiert.
+    reloadTask.getOutputs().upToDateWhen { false }
+    onlyIf {
+        if (!publish || !reload) {
+            logger.lifecycle("Portal-Reload übersprungen (s3Publish=${publish}, reloadPortal=${reload}).")
+            return false
+        }
+        true
+    }
     // Der Reload folgt erst nach bestätigter S3-Übernahme. Bei einem HTTP- oder
     // Anwendungsfehler bleibt die Veröffentlichung angenommen; nur der Portal-Reload
     // ist fehlgeschlagen. HTTP 200 genügt nicht, die Antwort muss success bestätigen.
-    doFirst { report.reload='failed'; writeReport() }
+    doFirst {
+        report.reload='failed'; writeReport()
+        logger.lifecycle("Portal-Reload: Starte HTTP POST für Release ${releaseId}.")
+    }
     doLast {
-        if (json(new File(outputs,'reload-response.json')).success!=true) throw new GradleException('Portal did not confirm successful reload.')
+        def response = json(new File(outputs,'reload-response.json'))
+        if (response.success!=true) throw new GradleException('Portal did not confirm successful reload.')
         report.reload='succeeded'; writeReport()
+        logger.lifecycle("Portal-Reload bestätigt (HTTP 200, success=true): ${response.visibleEntries} sichtbare Einträge " +
+                "(${response.visibleDatasets} Datensätze, ${response.visibleSeries} Datenreihen), geladen um ${response.loadedAt}.")
     }
 }
 tasks.register('publishToDatenportal') { dependsOn 'reloadPortal'; group='datenportal' }

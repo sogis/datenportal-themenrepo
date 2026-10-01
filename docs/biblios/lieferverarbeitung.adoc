@@ -263,6 +263,18 @@ fehlende Modelle, ungültige Spalten und doppelte Kennungen führen zum Fehler.
 |`initialCatalog` |Optionale lokale XTF nur für den Initialaufbau.
 |===
 
+Der Task `reloadPortal` protokolliert im normalen Gradle-/Jenkins-Log den
+HTTP-POST-Versuch mit der Release-ID und danach die bestätigte Antwort
+(`HTTP 200`, `success=true`) mit Ladezeit und Anzahl sichtbarer Einträge.
+Ohne S3-Freigabe oder ohne Reload-Anforderung nennt er den Grund für das
+Überspringen. Eine vorhandene Antwortdatei verhindert keinen erneut angeforderten
+Reload (`UP-TO-DATE`). Der Reload-Token wird nicht ausgegeben. Ein erfolgreicher Reload
+bedeutet nicht, dass jedes übernommene Thema sichtbar ist: Das Portal zeigt nur
+fachlich freigegebene Einträge mit `publicationStatus=published`.
+Eine reine CSV-Lieferung für ein bereits angenommenes Thema übernimmt keine
+Änderungen am Repository-Datenblatt; dafür den Repository-Abgleich oder einen
+Datenblatt-Upload verwenden.
+
 S3-Endpunkt, Region, Bucket, Access Key, Secret Key und ACL kommen aus der
 bestehenden zentralen S3-Konfiguration, siehe xref:s3-upload.adoc[S3-Properties].
 Die öffentliche Leseadresse muss zum tatsächlich gewählten Uploadziel passen;
