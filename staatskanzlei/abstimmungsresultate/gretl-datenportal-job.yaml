@@ -1,8 +1,0 @@
-title: Statistikdienst
-description: Datenportal-Ausführungen der Staatskanzlei.
-
-permissions:
-  read:
-    - team: datenportal-read
-  build:
-    - team: staatskanzlei-build
