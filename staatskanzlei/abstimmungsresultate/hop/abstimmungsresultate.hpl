@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <pipeline>
   <info>
-    <name>staatskanzlei.wahlresultate</name>
+    <name>staatskanzlei.abstimmungsresultate</name>
     <description>eCH-0252 v1: eidgenoessische und kantonale Geschaefte, eine Zeile pro Geschaeftskomponente und Gemeinde; ausschliesslich Standard-Transforms.</description>
     <parameters>
       <parameter>

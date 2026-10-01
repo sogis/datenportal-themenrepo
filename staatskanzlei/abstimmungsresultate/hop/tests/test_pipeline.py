@@ -12,8 +12,8 @@ import tempfile
 import unittest
 import xml.etree.ElementTree as ET
 
-ROOT = Path(__file__).resolve().parents[3]
-APP = ROOT / "staatskanzlei/wahlresultate"
+ROOT = Path(__file__).resolve().parents[4]
+APP = ROOT / "staatskanzlei/abstimmungsresultate/hop"
 V = "http://www.ech.ch/xmlns/eCH-0252/1"
 D = "http://www.ech.ch/xmlns/eCH-0155/5"
 DAY = "2026-03-08"
@@ -159,7 +159,7 @@ class HopPipelineTest(unittest.TestCase):
         target.write_bytes(sentinel)
         log = folder / "hop.log"
         with log.open("w") as stream:
-            proc = subprocess.run([str(self.hop / "hop-run.sh"), "-f", str(APP / "wahlresultate.hpl"),
+            proc = subprocess.run([str(self.hop / "hop-run.sh"), "-f", str(APP / "abstimmungsresultate.hpl"),
                                    "-r", "launcher-local", "-p", f"INPUT_XML={source},OUTPUT_DIR={output}"],
                                   env=self.env, cwd=ROOT, stdout=stream, stderr=subprocess.STDOUT, timeout=90)
         content = log.read_text()
@@ -179,7 +179,7 @@ class HopPipelineTest(unittest.TestCase):
         self.assertEqual(len(list(output.iterdir())), 1, f"{label}: unexpected output file")
 
     def test_native_transforms_only(self):
-        pipeline = ET.parse(APP / "wahlresultate.hpl").getroot()
+        pipeline = ET.parse(APP / "abstimmungsresultate.hpl").getroot()
         allowed = {"GetVariable", "getXMLData", "Validator", "FilterRows", "WriteToLog", "SelectValues",
                    "Constant", "Coalesce", "Calculator", "ValueMapper", "ConcatFields", "SwitchCase",
                    "Abort", "SortRows", "TextFileOutput", "Dummy"}

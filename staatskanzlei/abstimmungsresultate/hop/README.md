@@ -1,6 +1,6 @@
 # Abstimmungsresultate aus eCH-0252
 
-Anwendungs-ID: `staatskanzlei.wahlresultate`. Die Pipeline `wahlresultate.hpl`
+Anwendungs-ID: `staatskanzlei.abstimmungsresultate`. Die Pipeline `abstimmungsresultate.hpl`
 verarbeitet eine eCH-0252-v1-Resultatlieferung aus VeWork. Exportiert werden nur
 **eidgenössische und kantonale Abstimmungen**. Eine CSV-Zeile entspricht
 **Geschäftskomponente × Gemeinde**. Vorlage, Gegenvorschlag und Stichfrage sind
@@ -13,7 +13,7 @@ XML-Datei und einen bestehenden Ausgabeordner angeben, dann **Starten**.
 Die Parameter bleiben `INPUT_XML` und `OUTPUT_DIR`; beide Pfade müssen im Launcher
 ausserhalb des verwalteten Checkouts liegen. Der Katalog bleibt
 `shared/hop/applications.yaml`, die Formularbeschreibung steht in
-`wahlresultate.launcher.yaml`.
+`abstimmungsresultate.launcher.yaml`.
 
 Für den direkten Start in Hop dieselben Parameter setzen und die lokale
 Run-Konfiguration `launcher-local` verwenden. Deren Metadaten sind unter
@@ -21,7 +21,7 @@ Run-Konfiguration `launcher-local` verwenden. Deren Metadaten sind unter
 
 ```sh
 hop-run.sh \
-  -f /pfad/zum/checkout/staatskanzlei/wahlresultate/wahlresultate.hpl \
+  -f /pfad/zum/checkout/staatskanzlei/abstimmungsresultate/hop/abstimmungsresultate.hpl \
   -r launcher-local \
   -p 'INPUT_XML=/pfad/zur/lieferung.xml,OUTPUT_DIR=/pfad/zur/ausgabe'
 ```
@@ -136,7 +136,7 @@ Die Integrationstests starten die echte Hop-Engine. Mit Hop 2.19.0 und einer
 geeigneten Java-Installation:
 
 ```sh
-python3 staatskanzlei/wahlresultate/tests/test_pipeline.py \
+python3 staatskanzlei/abstimmungsresultate/hop/tests/test_pipeline.py \
   --hop-home /pfad/zu/hop \
   --java-home /pfad/zum/jdk \
   --input-xml /pfad/zu/20260308_Abstimmungen_ech0252.xml \
