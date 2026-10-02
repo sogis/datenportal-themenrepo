@@ -38,7 +38,7 @@ Abhängigkeitsauflösung, Organisation und Datensatz passend wählen:
 ----
 ./shared/bin/gradlew-java17.sh --no-daemon \
   -I "$PWD/shared/gradle/init.gradle" -p agi preparePublication \
-  -Pdataset=ch.so.agi.av_nachfuehrungsstatistik.personal \
+  -Pdataset=ch.so.av_nachfuehrungsstatistik.personal \
   -PpublicationMode=repository-metadata \
   -PpublicationManifestUrl=http://localhost:8081/ch.so.daten/current.json \
   -Ps3Publish=false

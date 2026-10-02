@@ -8,7 +8,7 @@ ext.datenportalOrganization = [
         id            : 'agi',
         title         : 'Amt für Geoinformation',
         label         : 'Amt für Geoinformation',
-        defaultDataset: 'ch.so.agi.av_nachfuehrungsstatistik.personal'
+        defaultDataset: 'ch.so.av_nachfuehrungsstatistik.personal'
 ]
 
 apply from: '../shared/gradle/organisation-common.gradle'
