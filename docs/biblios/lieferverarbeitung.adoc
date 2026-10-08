@@ -314,6 +314,13 @@ Publizierende Aufrufe erlauben ausschliesslich HTTP(S)-Eingangsadressen.
 
 == Initialisierung
 
+Der normale lokale Dev-Stack-Start ruft diesen bestehenden Task automatisch
+auf, sobald ein erfolgreicher Seed und ein bestätigtes HTTP 404 im eigenen
+Garage-Bucket vorliegen. Ohne technische Daten entsteht `catalog: null` mit
+gültiger DuckDB. Für Migration oder externe Ziele bleibt der folgende explizite
+administrative Aufruf massgeblich; den lokalen Stack dafür zunächst mit
+`--infrastructure-only` starten.
+
 Vor Freigabe der Standardjobs beziehungsweise während diese pausiert sind:
 
 [source,bash]

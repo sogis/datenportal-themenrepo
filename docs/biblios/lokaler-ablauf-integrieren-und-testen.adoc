@@ -11,8 +11,8 @@ Seeder-Snapshot dürfen nicht als Gradle-Buildverzeichnis verwendet werden.
 
 Der separate Shellstart von Jenkins bleibt unter
 link:https://codeberg.org/edigonzales/datenportal-jenkins-dev/src/branch/main/docs/biblios/entwicklung/lokaler-jenkins-start.adoc[Jenkins lokal starten]
-beschrieben. Dort lässt sich `THEMEN_REPO_MODE` wählen; Compose setzt dagegen
-`working-tree` fest. Java-/Offline- und ENV-Einstellungen stehen in der
+beschrieben. Dort lässt sich `THEMEN_REPO_MODE` wählen; Compose verwendet normalerweise
+`working-tree`; die Registry-Variante verwendet `managed-git`. Java-/Offline- und ENV-Einstellungen stehen in der
 link:https://codeberg.org/edigonzales/datenportal-jenkins-dev/src/branch/main/docs/biblios/entwicklung/referenz-konfiguration.adoc[Jenkins-Referenz].
 
 == Änderung bis zur angenommenen Veröffentlichung
@@ -20,7 +20,7 @@ link:https://codeberg.org/edigonzales/datenportal-jenkins-dev/src/branch/main/do
 . Organisation/Thema nach xref:organisationen.adoc[Organisationsvertrag] und xref:datensaetze.adoc[Datensatzvertrag] bearbeiten.
 . Im `working-tree`-Modus Arbeitsbaum speichern, im `managed-git`-Modus Änderungen auf dem konfigurierten Remote-Branch bereitstellen.
 . `gretl-datenportal-seed` erfolgreich ausführen; Organisation, Datensatzliste und generierte Parameter prüfen.
-. Vor der allerersten Standardlieferung administrativ `initializePublication` im Root ausführen; Standardjobs dabei pausieren und laufende Builds abwarten. Keine erneute Initialisierung bei vorhandenem Manifest.
+. Der normale Dev-Stack-Start erledigt Seed und die allererste lokale Publikation automatisch. Für bewusste Migration oder abweichende Ziele den dokumentierten administrativen Root-Aufbau verwenden. Keine erneute Initialisierung bei vorhandenem Manifest.
 . Im Formular «Lieferung verarbeiten» mit CSV und/oder Metadaten oder «Datenblatt aus Repository übernehmen» ohne Upload wählen.
 . Build-Artefakte, Bericht und bei Publikation den S3-Verweis prüfen. Optional den Portal-Reload anfordern und dessen Ergebnis separat prüfen.
 

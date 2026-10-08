@@ -50,16 +50,22 @@ dagegen beim Seed-Lauf den externen Arbeitsbaum inklusive uncommitteter und
 untracked Dateien in einen Jenkins-internen Snapshot. Das externe Themenrepo
 wird nicht verändert; der Snapshot bleibt bis zum nächsten Seed-Lauf bestehen.
 Damit ist klar, ob eine Änderung fachlich versioniert oder nur lokal getestet
-wird. Nach einem frischen lokalen Start führt `admin` den ersten Seed-Lauf aus;
-danach kann das Mitglied des konfigurierten Seeder-Teams `seed-user` den Seeder
-starten.
+wird. Der vollständige Dev-Stack-Start `scripts/up.sh` führt als lokale
+Testadministration bei jedem Aufruf einen Seed aus und wartet auf Erfolg.
+Beim separaten Jenkins-Start den ersten erfolgreichen Lauf administrativ
+prüfen; danach kann das Mitglied des konfigurierten Seeder-Teams `seed-user`
+den Seeder starten.
 
 == Publikationsbestand initialisieren
 
 Der oben beschriebene Bootstrap erzeugt Jenkins-Jobs, keinen S3-Bestand.
 Vor der ersten Standardlieferung muss zusätzlich der administrative Root-Task
 `initializePublication` einen Gesamtstand mit `current.json` erzeugen.
-Standardjobs dafür pausieren und laufende Builds abwarten. Die vollständige
+Der normale lokale Dev-Stack-Start übernimmt dies bei HTTP 404 im eigenen
+Garage-Bucket automatisch: nach erfolgreichem Seed, bei pausiertem Jenkins,
+in einer beschreibbaren Kopie des Seed-Checkouts. Vorhandene Bestände bleiben
+erhalten. Migration und abweichende Publikationsziele werden explizit
+administrativ vorbereitet; Standardjobs dafür pausieren und laufende Builds abwarten. Die vollständige
 link:https://codeberg.org/edigonzales/datenportal-dev-stack/src/branch/main/docs/biblios/inbetriebnahme.adoc[Stack-Inbetriebnahme]
 beschreibt die beschreibbare Container-Arbeitskopie und optionale Katalogmigration.
 Bei vorhandenem Manifest ist die Initialisierung gesperrt. Ein späterer Seed
