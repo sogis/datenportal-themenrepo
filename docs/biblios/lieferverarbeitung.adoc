@@ -295,7 +295,7 @@ keine Secrets; sie aktivieren weder Upload noch Git.
 |`downloadBase` |`https://s3.geo.so.ch/datenportal` |Basis neuer Distributions-URLs; `catalogDownloadBase` hat Vorrang. Bestehende Katalogzuordnungen werden erhalten.
 |`publisher` |`ch.so.agi` |Publisher-Zuordnung; Änderung in der Datei.
 |`title` |`Datenportal Kanton Solothurn` |Katalogtitel; Änderung in der Datei.
-|`description` |`Datensätze und Datenserien des Kantons Solothurn` |Katalogbeschreibung; Änderung in der Datei.
+|`description` |Vollständiger Einführungstext aus `shared/publication.properties` |Wird als `Catalog.description` ins PublishedCatalog-XTF übernommen und auf der Portal-Startseite angezeigt; Änderung in der Datei.
 |`theme.*`, `frequency.*`, `access.*` |URI-Zuordnungen je Modellwert in der Datei |SQL-Mappings für Thema, Nachführungsfrequenz und Zugriff; keine unabhängigen ENV-Schalter je Eintrag.
 |`datasetPath`, `seriesPath`, `issuePath` |`/datasets/`, `/series/`, `/issues/` |URI-Pfade der jeweiligen Ressourcentypen; Änderung in der Datei.
 |===
