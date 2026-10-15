@@ -2,13 +2,4 @@ plugins {
     id 'ch.so.agi.gretl'
 }
 
-description = 'Datenportal-Ausführungen des Statistikdiensts.'
-
-ext.datenportalOrganization = [
-        id            : 'statistikdienst',
-        title         : 'Statistikdienst',
-        label         : 'Statistikdienst',
-        defaultDataset: 'ch.so.bevoelkerung.altersstruktur'
-]
-
 apply from: '../shared/gradle/organisation-common.gradle'
