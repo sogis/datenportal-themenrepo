@@ -55,14 +55,7 @@
         <SO_AGI_DataCatalog_Base_20260529:email>mailto:abmh@dbk.so.ch</SO_AGI_DataCatalog_Base_20260529:email>
         <SO_AGI_DataCatalog_Base_20260529:officeAtWeb>https://so.ch/verwaltung/departement-fuer-bildung-kultur-und-sport/amt-fuer-berufsbildung-mittel-und-hochschulen/</SO_AGI_DataCatalog_Base_20260529:officeAtWeb>
       </SO_AGI_DataCatalog_Base_20260529:Office.Office>
-      <SO_AGI_DataCatalog_Base_20260529:Office.Office ili:tid="ch.so.arp">
-        <SO_AGI_DataCatalog_Base_20260529:identifier>ch.so.arp</SO_AGI_DataCatalog_Base_20260529:identifier>
-        <SO_AGI_DataCatalog_Base_20260529:name>Amt für Raumplanung</SO_AGI_DataCatalog_Base_20260529:name>
-        <SO_AGI_DataCatalog_Base_20260529:abbreviation>ARP</SO_AGI_DataCatalog_Base_20260529:abbreviation>
-        <SO_AGI_DataCatalog_Base_20260529:phoneNumber>032 627 25 61</SO_AGI_DataCatalog_Base_20260529:phoneNumber>
-        <SO_AGI_DataCatalog_Base_20260529:email>mailto:arp@bd.so.ch</SO_AGI_DataCatalog_Base_20260529:email>
-        <SO_AGI_DataCatalog_Base_20260529:officeAtWeb>https://so.ch/verwaltung/bau-und-justizdepartement/amt-fuer-raumplanung/ueber-uns/</SO_AGI_DataCatalog_Base_20260529:officeAtWeb>
-      </SO_AGI_DataCatalog_Base_20260529:Office.Office>
+      <SO_AGI_DataCatalog_Base_20260529:Office.Office ili:tid="ch.so.arp"><identifier xmlns="http://www.interlis.ch/xtf/2.4/SO_AGI_DataCatalog_Base_20260529">ch.so.arp</identifier><name xmlns="http://www.interlis.ch/xtf/2.4/SO_AGI_DataCatalog_Base_20260529">Amt für Raumplanung</name><abbreviation xmlns="http://www.interlis.ch/xtf/2.4/SO_AGI_DataCatalog_Base_20260529">ARP</abbreviation><phoneNumber xmlns="http://www.interlis.ch/xtf/2.4/SO_AGI_DataCatalog_Base_20260529">032 627 25 61</phoneNumber><email xmlns="http://www.interlis.ch/xtf/2.4/SO_AGI_DataCatalog_Base_20260529">mailto:arp@bd.so.ch</email><officeAtWeb xmlns="http://www.interlis.ch/xtf/2.4/SO_AGI_DataCatalog_Base_20260529">https://arp.so.ch/</officeAtWeb></SO_AGI_DataCatalog_Base_20260529:Office.Office>
       <SO_AGI_DataCatalog_Base_20260529:Office.Office ili:tid="ch.so.sk">
         <SO_AGI_DataCatalog_Base_20260529:identifier>ch.so.sk</SO_AGI_DataCatalog_Base_20260529:identifier>
         <SO_AGI_DataCatalog_Base_20260529:name>Staatskanzlei</SO_AGI_DataCatalog_Base_20260529:name>
@@ -71,6 +64,6 @@
         <SO_AGI_DataCatalog_Base_20260529:email>mailto:kanzlei@sk.so.ch</SO_AGI_DataCatalog_Base_20260529:email>
         <SO_AGI_DataCatalog_Base_20260529:officeAtWeb>https://so.ch/verwaltung/staatskanzlei/</SO_AGI_DataCatalog_Base_20260529:officeAtWeb>
       </SO_AGI_DataCatalog_Base_20260529:Office.Office>
-    <Office.Office xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" i:tid="ch.bfs" xmlns="http://www.interlis.ch/xtf/2.4/SO_AGI_DataCatalog_Base_20260529"><identifier>ch.bfs</identifier><name>Bundesamt für Statistik</name><abbreviation>BFS</abbreviation><phoneNumber>058 463 66 66</phoneNumber><email>mailto:info@bfs.admin.ch</email><officeAtWeb>https://www.bfs.admin.ch/</officeAtWeb></Office.Office></SO_AGI_DataCatalog_Base_20260529:Office>
+    <Office.Office xmlns="http://www.interlis.ch/xtf/2.4/SO_AGI_DataCatalog_Base_20260529" xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" i:tid="ch.bfs"><identifier>ch.bfs</identifier><name>Bundesamt für Statistik</name><abbreviation>BFS</abbreviation><phoneNumber>058 463 66 66</phoneNumber><email>mailto:info@bfs.admin.ch</email><officeAtWeb>https://www.bfs.admin.ch/</officeAtWeb></Office.Office></SO_AGI_DataCatalog_Base_20260529:Office>
   </ili:datasection>
 </ili:transfer>
