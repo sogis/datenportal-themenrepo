@@ -11,6 +11,14 @@ teams:
     users:
       - agi-user
 
+  afu-build:
+    users:
+      - afu-user
+
+  arp-build:
+    users:
+      - arp-user
+
   mfk-build:
     users:
       - mfk-user
