@@ -1,7 +1,4 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<ili:transfer
-  xmlns:ili="http://www.interlis.ch/xtf/2.4/INTERLIS"
-  xmlns:SO_AGI_DataCatalog_Base_20260529="http://www.interlis.ch/xtf/2.4/SO_AGI_DataCatalog_Base_20260529">
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><ili:transfer xmlns:ili="http://www.interlis.ch/xtf/2.4/INTERLIS" xmlns:SO_AGI_DataCatalog_Base_20260529="http://www.interlis.ch/xtf/2.4/SO_AGI_DataCatalog_Base_20260529">
   <ili:headersection>
     <ili:models>
       <ili:model>SO_AGI_DataCatalog_Base_20260529</ili:model>
@@ -74,6 +71,6 @@
         <SO_AGI_DataCatalog_Base_20260529:email>mailto:kanzlei@sk.so.ch</SO_AGI_DataCatalog_Base_20260529:email>
         <SO_AGI_DataCatalog_Base_20260529:officeAtWeb>https://so.ch/verwaltung/staatskanzlei/</SO_AGI_DataCatalog_Base_20260529:officeAtWeb>
       </SO_AGI_DataCatalog_Base_20260529:Office.Office>
-    </SO_AGI_DataCatalog_Base_20260529:Office>
+    <Office.Office xmlns:i="http://www.interlis.ch/xtf/2.4/INTERLIS" i:tid="ch.bfs" xmlns="http://www.interlis.ch/xtf/2.4/SO_AGI_DataCatalog_Base_20260529"><identifier>ch.bfs</identifier><name>Bundesamt für Statistik</name><abbreviation>BFS</abbreviation><phoneNumber>058 463 66 66</phoneNumber><email>mailto:info@bfs.admin.ch</email><officeAtWeb>https://www.bfs.admin.ch/</officeAtWeb></Office.Office></SO_AGI_DataCatalog_Base_20260529:Office>
   </ili:datasection>
 </ili:transfer>
