@@ -2,4 +2,8 @@ plugins {
     id 'ch.so.agi.gretl'
 }
 
+ext.datenportalOrganization = [
+    id: projectDir.name
+]
+
 apply from: '../shared/gradle/organisation-common.gradle'
